@@ -1,58 +1,61 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 @import "tailwindcss";
-body{
-  font-family: "Open Sans", sans-serif;;
+body {
+  font-family: "Open Sans", sans-serif;
   /* color: #23C58B;
   color: #1A1A1A;
   color: #B9F5D0;
   color: #F3F4F6; */
-  color: #DEC783;
-  color: #0D0D0D;
-  color: #F5F0E6;
-  color: #E8D7A6;
-  color: #5A4A2E;
+  color: #dec783;
+  color: #f5f0e6;
+  color: #e8d7a6;
+  color: #5a4a2e;
+  color: #0d0d0d;
+  width: 100%;
+  height: 100%;
 }
 @theme {
-  --color-primary1: #DEC783;
-  --color-primary2: #0D0D0D;
-  --color-primary3: #F5F0E6;
-  --color-primary4: #E8D7A6;
-  --color-primary5: #5A4A2E;
+  --color-primary1: #dec783;
+  --color-primary2: #0d0d0d;
+  --color-primary3: #f5f0e6;
+  --color-primary4: #e8d7a6;
+  --color-primary5: #5a4a2e;
 }
-/*
- * This custom class applies the core hover logic
- * where the ::after element starts at 0 width, is centered,
- * and grows to 100% width on hover.
- */
+
 .menu-item {
-  /* This is crucial for positioning the ::after element relative to the link text */
   position: relative;
-  /* Add padding to the bottom so the line doesn't sit right against the text */
   padding-bottom: 5px;
-  /* Add a smooth transition for the text color change */
   transition: color 0.8s ease;
 }
 
 .menu-item::after {
-  content: '';
-  /* Position the line absolutely at the bottom */
+  content: "";
   position: absolute;
   top: 25px;
-  left: 50%; /* Start the line from the middle */
-  transform: translateX(-50%); /* Center it perfectly */
-
-  height: 2px; /* Thickness of the line */
-  width: 0; /* Initial width is 0 */
-  background-color: #DEC783; /* Replace with your primary5 color */
-  /* Add a smooth transition for the width change */
+  left: 50%;
+  transform: translateX(-50%);
+  height: 2px;
+  width: 0;
+  background-color: #dec783;
   transition: width 0.3s ease-out;
 }
 
 .menu-item:hover::after {
-  width: 100%; /* Expand the width to 100% on hover */
+  width: 100%;
 }
 
-/* Optional: To maintain the original hover effect you had */
 .menu-item:hover {
-  color: #DEC783; /* Replace with your primary1 color */
+  color: #dec783;
+}
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dec783;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }

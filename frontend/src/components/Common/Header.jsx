@@ -1,13 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import TopBar from "../Layout/TopBar";
 import Navbar from "./Navbar";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-const Header = ({t1}) => {
+import SearchBar from "./SearchBar";
+const Header = () => {
+  const [searchModel, setSearchModel] = useState(false);
+  
   return (
-    <header>
-      <TopBar t1={t1}/>
-      <Navbar t1={t1}/>
+    <header className="relative">
+      <TopBar />
+      <Navbar setSearchModel={setSearchModel} searchModel={searchModel} />
+      <SearchBar searchModel={searchModel} />
     </header>
   );
 };
