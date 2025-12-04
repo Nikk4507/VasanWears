@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
   const drawerRef = useRef(null);
   const timeline = useRef(null);
-    // const cartItems = "";
+  // const cartItems = "";
   const cartItems = [
     {
       id: "p1",
@@ -39,46 +39,46 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
       size: "XL",
       color: "Blue",
     },
-    {
-      id: "p7",
-      name: "Denim Jacket",
-      price: 1799,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "XL",
-      color: "Blue",
-    },
-    {
-      id: "p8",
-      name: "Denim Jacket",
-      price: 1799,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "XL",
-      color: "Blue",
-    },
-    {
-      id: "p9",
-      name: "Denim Jacket",
-      price: 1799,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "XL",
-      color: "Blue",
-    },
-    {
-      id: "p10",
-      name: "Denim Jacket",
-      price: 1000,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "XL",
-      color: "Blue",
-    },
+    // {
+    //   id: "p7",
+    //   name: "Denim Jacket",
+    //   price: 1799,
+    //   quantity: 1,
+    //   image:
+    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
+    //   size: "XL",
+    //   color: "Blue",
+    // },
+    // {
+    //   id: "p8",
+    //   name: "Denim Jacket",
+    //   price: 1799,
+    //   quantity: 1,
+    //   image:
+    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
+    //   size: "XL",
+    //   color: "Blue",
+    // },
+    // {
+    //   id: "p9",
+    //   name: "Denim Jacket",
+    //   price: 1799,
+    //   quantity: 1,
+    //   image:
+    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
+    //   size: "XL",
+    //   color: "Blue",
+    // },
+    // {
+    //   id: "p10",
+    //   name: "Denim Jacket",
+    //   price: 1000,
+    //   quantity: 1,
+    //   image:
+    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
+    //   size: "XL",
+    //   color: "Blue",
+    // },
   ];
 
   useGSAP(() => {
@@ -118,7 +118,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
         opacity: 0,
         x: 30,
         duration: 0.1,
-        stagger: 0.2
+        stagger: 0.2,
       });
     }
   }, []);
@@ -136,7 +136,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
       {/* OVERLAY */}
       {cartDrawer && (
         <div
-          className="fixed inset-0 bg-black/40 z-30"
+          className="fixed h-[calc(100vh)] inset-0 bg-black/40 z-30"
           onClick={() => setCartDrawer(false)}
         ></div>
       )}
@@ -144,11 +144,11 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
       {/* DRAWER */}
       <div
         ref={drawerRef}
-        className="fixed top-0 right-0 xl:w-1/4 md:1/2 w-3/4 bg-white  md:h-screen h-full z-50 shadow-xl flex flex-col"
+        className="fixed top-0 right-0 xl:w-1/4 md:1/2 w-3/4 bg-white  h-screen z-100 md:z-50 shadow-xl flex flex-col"
       >
         <div className="flex justify-between items-center p-5 border-b-2 border-slate-500/20 bg-primary3">
           <div className="">
-            <h2 className="font-semibold text-lg md:text-xl">Your Cart</h2>
+            <h4 className="font-semibold text-lg md:text-xl">Your Cart</h4>
           </div>
           <button
             className="cursor-pointer z-30"
@@ -159,7 +159,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
             <RiCloseLine className="h-8 w-8 text-primary2" />
           </button>
         </div>
-        <div className="grow overflow-x-hidden overflow-y-auto custom-scroll">
+        <div className="md:h-[80vh] h-[60vh] overflow-x-hidden overflow-y-auto custom-scroll">
           {cartItems ? (
             <div className="p-4 flex flex-col gap-4 ">
               {cartItems.map((item) => (
@@ -171,7 +171,9 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
                     <img src={item.image} alt="" className="w-20" />
                   </div>
                   <div className="content flex flex-col">
-                    <h5 className="text-sm font-bold md:font-medium md:text-lg">{item.name}</h5>
+                    <h5 className="text-sm font-bold md:font-medium md:text-lg">
+                      {item.name}
+                    </h5>
                     <span className="text-sm">Color: {item.color}</span>
                     <span className="text-sm">Size: {item.size}</span>
                     <span className="text-sm font-bold text-primary5">
@@ -202,7 +204,8 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
               <h4 className="text-lg font-semibold">Your cart is empty.🛒</h4>
               <Link
                 to="/shop"
-                className="py-2.5 px-8 bg-primary2 text-white rounded-xl hover:bg-primary1 hover:text-black font-semibold"
+                className="py-2.5 px-8 rounded-xl font-semibold text-primary2 
+             transition-all duration-300 btn-slide md:text-base text-sm"
               >
                 Return to Shop
               </Link>

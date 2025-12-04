@@ -61,13 +61,15 @@ const Navbar = ({ searchModel, setSearchModel }) => {
     });
   }, []);
   const mobileSidebarOpen = () => {
+    document.body.style.overflow = "hidden"; 
     mobileMenuTimeline.current.play();
   };
   const mobileSidebarClose = () => {
+    document.body.style.overflow = "auto";   
     mobileMenuTimeline.current.reverse();
   };
   return (
-    <div className="px-4 border-b border-b-slate-200 z-20 ">
+    <div className={"px-4 border-b border-b-slate-200 z-20 "}>
       <nav className="container mx-auto flex items-center justify-between  py-4">
         <div className="md:hidden flex mobile-1">
           <button onClick={mobileSidebarOpen}>
@@ -128,7 +130,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           </Link>
         </div>
       </nav>
-      <div className="w-full h-screen absolute  bg-white/1 backdrop-blur-md left-0 top-0 mobile-menu -translate-x-full flex flex-col p-6 text-3xl justify-center items-center gap-4 font-semibold">
+      <div className="z-50 w-full h-screen fixed bg-linear-to-bl  from-primary1 to-primary4 backdrop-blur-2xl left-0 top-0 mobile-menu -translate-x-full flex flex-col p-6 text-3xl justify-center items-center gap-4 font-semibold overflow-hidden">
         <Link to="/" className="hover:text-primary1 ">
           Home
         </Link>
@@ -145,7 +147,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           Contact Us
         </Link>
         <button
-          className="bg-primary1 p-2 rounded-full absolute top-10 right-10 mobile-cross"
+          className="bg-primary3 p-2 rounded-full absolute top-10 right-10 mobile-cross"
           onClick={mobileSidebarClose}
         >
           <RiCloseLine className="w-10 h-10" />

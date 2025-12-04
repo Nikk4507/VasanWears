@@ -31,7 +31,7 @@ const SearchBar = ({ searchModel }) => {
   return (
     <div
       ref={barRef}
-      className="absolute left-0 top-[120px] md:top-[143px] w-full bg-primary2 py-4 md:py-8 searchBarContainer z-1 flex justify-center items-center px-4 md:px-10 xl:px-50"
+      className={`absolute left-0 top-[120px] md:top-[143px] w-full bg-primary2 py-4 md:py-8 searchBarContainer flex justify-center items-center px-4 md:px-10 xl:px-50 z-1 ${searchModel ? "pointer-events-auto" : "pointer-events-none"}`}
     >
       {/* Example input */}
       <input

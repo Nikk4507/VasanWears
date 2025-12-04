@@ -1,0 +1,96 @@
+import React from "react";
+
+const HowItWorks = () => {
+  return (
+    <section className="px-4 py-6 md:py-20 bg-white">
+      <div className="container mx-auto">
+        {/* Section Heading */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-bold text-primary2">
+            How to create custom shirts
+          </h2>
+          <p className="text-primary5 mt-3 max-w-2xl mx-auto">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur
+            minima ipsum libero, veritatis odio deserunt.
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="relative">
+          {/* Vertical Line */}
+          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full border-l-2 border-gray-200"></div>
+
+          {/* Step 1 */}
+          <div className="grid md:grid-cols-2 gap-10 items-center md:mb-20 mb-6">
+            <img
+              src="./images/slider2.jpg"
+              className="rounded-xl shadow-md"
+              alt="step"
+            />
+
+            <div>
+              <div className="w-15 h-15 flex items-center justify-center bg-linear-to-br from-primary4 to-primary3 text-primary2 text-2xl rounded-full mb-4 font-semibold">
+                1
+              </div>
+              <h4 className="text-3xl font-semibold mb-2">
+                Add your shirt design
+              </h4>
+              <p className="text-primary5">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed,
+                fugiat exercitationem soluta vitae natus temporibus.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="grid md:grid-cols-2 gap-10 items-center md:mb-20 mb-6 md:flex-row-reverse">
+            <div className="md:order-2">
+              <img
+                src="./images/hiw1.jpeg"
+                className="rounded-xl shadow-md"
+                alt="step"
+              />
+            </div>
+
+            <div className="md:order-1">
+              <div className="w-15 h-15 flex items-center justify-center bg-linear-to-br from-primary4 to-primary3 text-primary2 text-2xl rounded-full mb-4 font-semibold">
+                2
+              </div>
+              <h4 className="text-3xl font-semibold mb-2">
+                Custom artwork & review
+              </h4>
+              <p className="text-primary5">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed,
+                fugiat exercitationem soluta vitae natus temporibus.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <img
+              src="./images/htw2.jpg"
+              className="rounded-xl shadow-md"
+              alt="step"
+            />
+
+            <div>
+              <div className="w-15 h-15 flex items-center justify-center bg-linear-to-br from-primary4 to-primary3 text-primary2 text-2xl rounded-full mb-4 font-semibold">
+                3
+              </div>
+              <h4 className="text-3xl font-semibold mb-2">
+                Enjoy your product
+              </h4>
+              <p className="text-primary5">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed,
+                fugiat exercitationem soluta vitae natus temporibus.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default HowItWorks;
