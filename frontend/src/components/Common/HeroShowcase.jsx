@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const HeroShowcase = () => {
   return (
     <section className="px-5 bg-white py-20">
-      <div className="container mx-auto px-6 grid md:grid-cols-2 gap-10 items-center">
+      <div className="container mx-auto grid md:grid-cols-2 gap-10 items-center">
         {/* LEFT SIDE IMAGES */}
         <div>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
@@ -25,25 +25,30 @@ const HeroShowcase = () => {
         </div>
 
         {/* RIGHT CONTENT */}
-        
+
         <div className="relative flex justify-center items-center">
           {/* Background illustrations */}
           <img
-            src="./images/slider2.jpg"
-            className="absolute top-4 left-10 rounded-xl shadow-md"
+            src="/images/hero1.jpg"
+            className="absolute top-4 left-10 rounded-xl shadow-md w-40"
           />
           <img
-            src="./images/htw2.jpg"
-            className="absolute bottom-10 left-0 rounded-xl shadow-md"
+            src="/images/hero2.jpg"
+            className="absolute bottom-10 left-0 rounded-xl shadow-md w-40"
           />
           <img
-            src="./images/slider3.jpg"
-            className="absolute top-20 right-5 rounded-xl shadow-md"
+            src="/images/hero3.jpg"
+            className="absolute top-20 right-5 rounded-xl shadow-md w-40"
+          />
+          <img
+            src="/images/hiw1.jpeg"
+            className="absolute right-20 bottom-0 rounded-xl shadow-md w-40"
+            alt="htw2"
           />
 
           {/* Central Product Card */}
           <div className="relative bg-white p-6 rounded-2xl shadow-xl w-[380px] z-10">
-            <img src="./images/slider.jpg" className="rounded-lg w-full mb-4" />
+            <img src="/images/hero4.png" className="rounded-lg w-full mb-4" />
 
             {/* Dummy details */}
             <div className="space-y-3">
@@ -53,20 +58,20 @@ const HeroShowcase = () => {
 
               {/* Colors */}
               <div className="flex gap-3 mt-4">
-                <div className="w-6 h-6 bg-green-400 rounded-full"></div>
-                <div className="w-6 h-6 bg-blue-200 rounded-full"></div>
-                <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                <div className="w-6 h-6 bg-primary1 rounded-full"></div>
+                <div className="w-6 h-6 bg-primary4 rounded-full"></div>
+                <div className="w-6 h-6 bg-primary3 rounded-full"></div>
               </div>
 
               {/* Button */}
-              <button className="bg-green-500 text-white px-4 py-2 rounded-lg mt-4 w-full cursor-pointer">
+              <Link className="py-2.5 px-8 rounded-xl font-semibold text-primary2 transition-all duration-300 btn-slide md:text-base text-sm w-full block text-center">
                 Save Design
-              </button>
+              </Link>
             </div>
           </div>
 
           {/* Tools Sidebar */}
-          <div className="absolute right-[-50px] top-1/2 transform -translate-y-1/2 flex flex-col gap-3">
+          {/* <div className="absolute right-[-50px] top-1/2 transform -translate-y-1/2 flex flex-col gap-3">
             <button className="w-12 h-12 bg-white shadow-sm rounded-lg flex items-center justify-center border">
               ✏️
             </button>
@@ -82,7 +87,7 @@ const HeroShowcase = () => {
             <button className="w-12 h-12 bg-white shadow-sm rounded-lg flex items-center justify-center border">
               🖼️
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>
@@ -90,3 +95,64 @@ const HeroShowcase = () => {
 };
 
 export default HeroShowcase;
+
+// {/* RIGHT CONTENT */}
+
+//         <div className="relative flex justify-center items-center h-130">
+//           {/* Background illustrations */}
+//           <img
+//             src="./images/slider2.jpg"
+//             className="absolute top-0 w-80 left-10 rounded-xl shadow-md"
+//           />
+//           <img
+//             src="./images/htw2.jpg"
+//             className="absolute bottom-0 w-80 left-0 rounded-xl shadow-md"
+//           />
+//           <img
+//             src="./images/slider3.jpg"
+//             className="absolute top-30 w-90  right-5 rounded-xl shadow-md"
+//           />
+
+//           {/* Central Product Card */}
+//           <div className="relative bg-white p-6 rounded-2xl shadow-xl w-[380px] z-10">
+//             <img src="./images/slider.jpg" className="rounded-lg w-full mb-4" />
+
+//             {/* Dummy details */}
+//             <div className="space-y-3">
+//               <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+//               <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+//               <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+
+//               {/* Colors */}
+//               <div className="flex gap-3 mt-4">
+//                 <div className="w-6 h-6 bg-green-400 rounded-full"></div>
+//                 <div className="w-6 h-6 bg-blue-200 rounded-full"></div>
+//                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+//               </div>
+
+//               {/* Button */}
+//               <button className="bg-green-500 text-white px-4 py-2 rounded-lg mt-4 w-full cursor-pointer">
+//                 Save Design
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Tools Sidebar */}
+//           <div className="absolute right-[-50px] top-1/2 transform -translate-y-1/2 flex flex-col gap-3">
+//             <button className="w-12 h-12 bg-white shadow-sm rounded-lg flex items-center justify-center border">
+//               ✏️
+//             </button>
+
+//             <button className="w-12 h-12 bg-green-500 text-white shadow-lg rounded-lg flex items-center justify-center">
+//               🎨
+//             </button>
+
+//             <button className="w-12 h-12 bg-white shadow-sm rounded-lg flex items-center justify-center border">
+//               T
+//             </button>
+
+//             <button className="w-12 h-12 bg-white shadow-sm rounded-lg flex items-center justify-center border">
+//               🖼️
+//             </button>
+//           </div>
+//         </div>
