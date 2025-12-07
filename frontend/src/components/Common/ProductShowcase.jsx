@@ -224,7 +224,6 @@ const ProductCard = ({ data }) => {
       x: 0,
       duration: 0.4,
       stagger: 0.1,
-      duration: 0.4,
     });
     gsap.to(sideIconRef.current, {
       opacity: 0,
