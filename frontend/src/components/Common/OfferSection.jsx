@@ -90,15 +90,15 @@ const OfferSection = () => {
           .map((_, i) => (
             <div
               key={i}
-              className="marquee-item flex shrink-0 items-center gap-6 px-10 md:py-4"
+              className="marquee-item flex shrink-0 items-center gap-6 px-10 py-2 md:py-4"
             >
               <h1 className="text-2xl md:text-4xl uppercase font-semibold whitespace-nowrap">
                 Buy 2 Get 1 Free. And 25% Off using DISC18
               </h1>
 
               <RiArrowRightLine
-                size={60}
-                className="marquee-arrow transition-all"
+                
+                className="marquee-arrow transition-all md:w-20 md:h-20 w-10 h-10"
               />
             </div>
           ))}

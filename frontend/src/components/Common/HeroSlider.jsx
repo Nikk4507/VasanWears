@@ -37,25 +37,25 @@ const HeroSlider = () => {
     return () => clearInterval(interval);
   }, [current]);
   const animateSlide = () => {
-    gsap.from(slideRef.current, {
-      opacity: 0,
-      scale: 1.06,
-      duration: 1.2,
-      ease: "power3.out",
-    });
+    gsap.fromTo(
+      slideRef.current,
+      { opacity: 0, scale: 1.06 },
+      { opacity: 1, scale: 1, duration: 1.2, ease: "power3.out" }
+    );
 
-    gsap.from(contentRef.current.children, {
-      opacity: 0,
-      y: 30,
-      duration: 0.8,
-      stagger: 0.2,
-      delay: 0.2,
-    });
+    gsap.fromTo(
+      contentRef.current.children,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.8, stagger: 0.2, delay: 0.2 }
+    );
   };
 
-  useGSAP(() => {
-    animateSlide();
-  }, [current]);
+  useGSAP(
+    () => {
+      animateSlide();
+    },
+    { dependencies: [current], revertOnUpdate: true }
+  );
 
   const nextSlide = () => {
     setCurrent((prev) => (prev + 1) % slides.length);

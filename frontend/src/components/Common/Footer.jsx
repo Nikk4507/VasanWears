@@ -70,7 +70,8 @@ const Footer = () => {
         <div>
           <h4 className="text-lg font-semibold mb-4">Newsletter</h4>
           <p className="text-primary5 mb-4">Subscribe to our newsletter.</p>
-          <input
+          <div className="flex md:flex-col flex-row">
+            <input
             type="text"
             className="border border-primary4 px-4 py-1 md:rounded-md bg-white text-primary2 outline-0 rounded-tl-xl rounded-bl-xl"
             placeholder="Enter your email...."
@@ -82,11 +83,12 @@ const Footer = () => {
           >
             Subscribe
           </button>
+          </div>
         </div>
       </div>
 
       {/* PAYMENT & COPYRIGHT */}
-      <div className="border-t border-primary4 px-4">
+      <div className="border-t border-primary4 px-4 pb-15 md:pb-0">
         <div className="container mx-auto  md:py-6 py-4 flex flex-col md:flex-row items-center justify-between gap-5 md:gap-6">
           {/* Payment Icons */}
           <div className="flex items-center gap-3 flex-wrap text-primary5 ">

@@ -154,7 +154,7 @@ const ProductShowcase = () => {
           </p>
 
           {/* Tabs */}
-          <div className="flex md:justify-center mt-6 gap-4 overflow-x-auto w-full md:py-0 py-2 md:px-0 px-2 scrollbar-hide">
+          <div className="flex md:justify-center mt-6 gap-4 overflow-x-auto w-full md:py-0 py-2 md:px-0 px-2 ">
             {TABS.map((tab) => (
               <button
                 key={tab}

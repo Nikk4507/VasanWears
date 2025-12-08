@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const HeroShowcase = () => {
   return (
-    <section className="px-5 bg-primary3/60 md:py-20">
+    <section className="px-5 bg-primary3/60 py-6 md:py-20">
       <div className="container mx-auto grid md:grid-cols-2 gap-10 items-center">
         {/* LEFT SIDE IMAGES */}
         <div>

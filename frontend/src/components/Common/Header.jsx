@@ -43,7 +43,7 @@ const Header = () => {
     <header className="fixed top-0 w-full z-100 bg-white navbar-wrapper">
        <TopBar visible={topBar} />
       <Navbar setSearchModel={setSearchModel} searchModel={searchModel} />
-      <SearchBar searchModel={searchModel} />
+      <SearchBar searchModel={searchModel} topBar={topBar} />
     </header>
   );
 };

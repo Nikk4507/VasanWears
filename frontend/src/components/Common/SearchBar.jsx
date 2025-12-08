@@ -3,7 +3,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { RiSearch2Line } from "@remixicon/react";
 
-const SearchBar = ({ searchModel }) => {
+const SearchBar = ({ searchModel, topBar }) => {
   const [searchText, setSearchText] = useState("");
   const barRef = useRef(null);
   const t1 = useRef(null);
@@ -31,7 +31,7 @@ const SearchBar = ({ searchModel }) => {
   return (
     <div
       ref={barRef}
-      className={`absolute left-0 top-[120px] md:top-[143px] w-full bg-primary2 py-4 md:py-8 searchBarContainer flex justify-center items-center px-4 md:px-10 xl:px-50 z-1 ${searchModel ? "pointer-events-auto" : "pointer-events-none"}`}
+      className={`absolute left-0 ${topBar? 'top-[120px] md:top-[143px]': 'top-[83px] md:top-[103px]'} w-full bg-primary2 py-4 md:py-8 searchBarContainer flex justify-center items-center px-4 md:px-10 xl:px-50 z-1 ${searchModel ? "pointer-events-auto" : "pointer-events-none"}`}
     >
       {/* Example input */}
       <input
