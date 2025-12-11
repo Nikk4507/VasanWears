@@ -4,6 +4,7 @@ import gsap from "gsap";
 // ... (imports remain the same)
 import Banner from "../components/Common/Banner";
 import CustomSortDropdown from "../components/Common/CustomSortDropdown";
+import slugify from "../utils/Slug";
 import {
   RiArrowDownSLine,
   RiArrowUpSLine,
@@ -25,6 +26,8 @@ const ShopPage = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [priceRange, setPriceRange] = useState([0, 2400]); // min to max price in ₹
+  const [isSliderOpen, setIsSliderOpen] = useState(false);
+  const [tempSortType, setTempSortType] = useState(sortType);
 
   // --- TEMPORARY MOBILE FILTER STATE ---
   // These only update the main state when 'Apply' is clicked
@@ -42,14 +45,25 @@ const ShopPage = () => {
     setTempColor(selectedColor);
     setTempSize(selectedSize);
     setTempPriceRange(priceRange);
+    setTempSortType(sortType);
   }, [
     selectedCategory,
     selectedSubCategory,
     selectedColor,
     selectedSize,
     priceRange,
+    sortType,
   ]);
-
+  useEffect(() => {
+    if (isSliderOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isSliderOpen]);
   // --- HANDLERS ---
 
   const handleApplyFilters = () => {
@@ -59,7 +73,7 @@ const ShopPage = () => {
     setSelectedColor(tempColor);
     setSelectedSize(tempSize);
     setPriceRange(tempPriceRange);
-
+    setSortType(tempSortType);
     // 2. Close the mobile filter panel
     sortingFilterMobileClose();
   };
@@ -71,12 +85,13 @@ const ShopPage = () => {
     setTempColor("");
     setTempSize("");
     setTempPriceRange([0, 2400]);
-
+    setTempSortType("default");
     setSelectedCategory("");
     setSelectedSubCategory("");
     setSelectedColor("");
     setSelectedSize("");
     setPriceRange([0, 2400]);
+    setSortType("default");
 
     // 2. Close the mobile filter panel
     sortingFilterMobileClose();
@@ -175,7 +190,7 @@ const ShopPage = () => {
     setTempColor(selectedColor);
     setTempSize(selectedSize);
     setTempPriceRange(priceRange);
-
+    setIsSliderOpen(true);
     const filterEl = document.querySelector(".mobile-filter");
     gsap.fromTo(
       filterEl,
@@ -186,6 +201,7 @@ const ShopPage = () => {
 
   const sortingFilterMobileClose = () => {
     const filterEl = document.querySelector(".mobile-filter");
+    setIsSliderOpen(false);
     gsap.fromTo(
       filterEl,
       { y: "0" }, // starting position
@@ -338,7 +354,7 @@ const ShopPage = () => {
       </div>
 
       {/* ----------------- MOBILE FILTER PANEL ----------------- */}
-      <div className="md:hidden flex fixed inset-0 translate-y-full mobile-filter h-screen w-full z-50">
+      <div className="md:hidden flex fixed inset-0 translate-y-full mobile-filter h-screen w-full z-100 overflow-y-hidden">
         <div
           className="absolute inset-0 bg-black/20"
           onClick={sortingFilterMobileClose}
@@ -447,6 +463,36 @@ const ShopPage = () => {
               priceRange={tempPriceRange} // Use temp state
               setPriceRange={setTempPriceRange} // Use temp setter
             />
+          </Accordion>
+          {/* Price High and Low Filter - MOBILE (Uses TEMP state) */}
+          <Accordion title="Sort by Price">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tempSortType === "low-to-high"}
+                onChange={() =>
+                  setTempSortType(
+                    tempSortType === "low-to-high" ? "default" : "low-to-high"
+                  )
+                }
+                className="w-4 h-4"
+              />
+              <span>Low to High</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tempSortType === "high-to-low"}
+                onChange={() =>
+                  setTempSortType(
+                    tempSortType === "high-to-low" ? "default" : "high-to-low"
+                  )
+                }
+                className="w-4 h-4"
+              />
+              <span>High to Low</span>
+            </label>
           </Accordion>
 
           {/* ACTION BUTTONS */}
@@ -575,7 +621,7 @@ const ProductCard = ({ data }) => {
       onMouseEnter={handleHoverIn}
       onMouseLeave={handleHoverOut}
     >
-      <Link to={`/shop/${data.id}`}>
+      <Link to={`/shop/${data.id}/${slugify(data.title)}`}>
         {/* Tags */}
         <div className="absolute top-4 left-4 md:top-7 md:left-7 flex flex-col gap-1 z-10">
           {data.tags.map((t, i) => (

@@ -4,9 +4,11 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import noCart from "../../assets/images/no-cart.gif";
 import { Link } from "react-router-dom";
+
 const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
   const drawerRef = useRef(null);
   const timeline = useRef(null);
+
   // const cartItems = "";
   const cartItems = [
     {

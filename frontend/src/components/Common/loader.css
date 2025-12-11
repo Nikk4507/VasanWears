@@ -1,0 +1,41 @@
+/* Bars loader styles — uses currentColor so theme color applies via `color`/Tailwind `text-*` classes */
+.vv-loader-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary3);
+}
+.vv-loader-inline{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.vv-loader{
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  color: var(--color-primary5);
+}
+.vv-loader .bar{
+  width: 8px;
+  height: 28px;
+  background: var(--color-primary5);
+  border-radius: 4px;
+  transform-origin: center bottom;
+  animation: vv-bounce 1s infinite ease-in-out;
+}
+.vv-loader .bar:nth-child(1){ animation-delay: -0.45s; height:20px; }
+.vv-loader .bar:nth-child(2){ animation-delay: -0.25s; height:34px; }
+.vv-loader .bar:nth-child(3){ animation-delay: -0.05s; height:24px; }
+.vv-loader .bar:nth-child(4){ animation-delay: 0.12s;  height:36px; }
+.vv-loader .bar:nth-child(5){ animation-delay: 0.3s;   height:28px; }
+
+@keyframes vv-bounce{
+  0%{ transform: scaleY(0.32); }
+  40%{ transform: scaleY(1); }
+  60%{ transform: scaleY(0.7); }
+  100%{ transform: scaleY(0.32); }
+}

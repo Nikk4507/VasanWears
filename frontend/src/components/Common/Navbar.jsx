@@ -14,9 +14,12 @@ import {
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import CartDrawer from "../Layout/CartDrawer";
+import { useCartStore } from "../../store/cartStore";
 const Navbar = ({ searchModel, setSearchModel }) => {
   const [cartDrawer, setCartDrawer] = useState(false);
   const mobileMenuTimeline = useRef(null);
+  const cart = useCartStore((state) => state.cart);
+  const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
   useGSAP(() => {
     var t1 = gsap.timeline();
 
@@ -122,7 +125,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           >
             <RiShoppingBagLine className="hover:text-primary1" />
             <span className="absolute px-2 py-0.5 bg-primary5 -top-4 left-3 text-xs flex items-center justify-center rounded-full text-primary3">
-              20
+              {totalQty}
             </span>
           </button>
           <Link to="" className="hover:text-primary1 md:block hidden">

@@ -113,3 +113,18 @@ select {
   /* This targets the <select> element itself */
   accent-color: #ff6347; /* Example: Tomato red */
 }
+input[type="checkbox"] {
+  @apply w-4 h-4 border-2 border-gray-400 rounded appearance-none cursor-pointer;
+}
+
+input[type="checkbox"]:checked {
+  @apply bg-primary5 border-primary5;
+}
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  font-size: 12px;
+  color: white;
+  position: relative;
+  top: -8px;
+  left: 2px;
+}
