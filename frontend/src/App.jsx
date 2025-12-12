@@ -8,6 +8,8 @@ import ShopPage from "./pages/ShopPage";
 import SingleProductPage from "./pages/SingleProductPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import MyAccount from "./pages/MyAccount";
+import ProtectedRoute from "./components/components/ProtectedRoute";
 
 const App = () => {
   return (
@@ -17,10 +19,18 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/shop" element={<ShopPage />} />
+          <Route
+            path="/my-account"
+            element={
+              <ProtectedRoute>
+                <MyAccount />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/shop/:id/:name" element={<SingleProductPage />} />
         </Route>{" "}
-        <Route path="/login" element={<LoginPage/>}/>
-        <Route path="/register" element={<RegisterPage/>}/>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         //User Layout
         <Route path="/admin" element={<AdminDashboard />}></Route> //Admin
         Layout

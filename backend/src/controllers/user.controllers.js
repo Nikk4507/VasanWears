@@ -4,7 +4,8 @@ import { User } from "../model/user.model.js";
 import { uploadCloudinary } from "../utils/Cloudinary.js";
 import { OAuth2Client } from "google-auth-library";
 import bcryptjs from "bcryptjs";
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import axios from "axios";
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const options = {
     httpOnly: true,
     secure: true
@@ -139,28 +140,29 @@ const loginUser = asyncHandler(async (req, res) => {
         );
 });
 const googleLogin = asyncHandler(async (req, res) => {
-    const { idToken } = req.body;
-    console.log("Id Token ", idToken);
+    const { access_token } = req.body;
+    console.log("Access Token ", access_token);
 
-    if (!idToken) {
+    if (!access_token) {
         return res
             .status(400)
             .json(new ApiResponse(400, "Google ID token is required.", null));
     }
 
     // 1️⃣ Verify the token using Google
-    const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    console.log("Ticket ", ticket);
-    const payload = ticket.getPayload();
-    console.log("Payload ", payload);
+    // const ticket = await client.verifyIdToken({
+    //     idToken,
+    //     audience: process.env.GOOGLE_CLIENT_ID,
+    // });
+    // console.log("Ticket ", ticket);
+    const googleRes = await axios.get(
+        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
+    );
+    // const payload = ticket.getPayload();
+    // console.log("Payload ", payload);
 
-    const { email, name, picture, sub: googleId } = payload;
+    const { email, name, picture, sub: googleId } = googleRes.data;
 
-    console.log("Payload ", payload);
-    console.log("Google Id ", googleId);
     // 2️⃣ Check if user exists
     let user = await User.findOne({ email });
     console.log("User existed ", user);
@@ -210,6 +212,22 @@ const googleLogin = asyncHandler(async (req, res) => {
             })
         );
 });
+const logoutHandler = asyncHandler(async (req, res) => {
+    const userId = req?.user._id;
+    if (!userId) {
+        return res
+            .status(400)
+            .json(new ApiResponse(401, "User is not found.", null));
+    }
+    const user = await User.findById(userId);
+    user.refreshToken = null;
+    await user.save({ validateBeforeSave: false });
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, "Logout Successful", null));
+});
 const currentUser = asyncHandler(async (req, res) => {
     const userId = req?.user._id;
     if (!userId) {
@@ -234,4 +252,4 @@ const userProfile = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, "User Found Successfully", user));
 })
-export { registerUser, loginUser, currentUser, userProfile, googleLogin };
+export { registerUser, loginUser, currentUser, userProfile, googleLogin , logoutHandler };

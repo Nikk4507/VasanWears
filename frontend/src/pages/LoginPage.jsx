@@ -1,25 +1,81 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "../store/useAuthStore";
+import { googleLoginApi, loginUser } from "../utils/api";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast"; // ✅ Import toast
+
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  // Login with email/password
+  const loginHandler = async (e) => {
+    e.preventDefault();
+
+    try {
+      const data = await loginUser(email, password);
+
+      setAuth({
+        user: data.data.user,
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+      });
+
+      toast.success("Login Successful! 🎉");
+
+      // Wait 1.5 seconds before navigating
+      setTimeout(() => {
+        navigate("/my-account");
+      }, 1500);
+    } catch (error) {
+      console.error("Login failed:", error.response?.data || error);
+      toast.error("Invalid credentials! ❌");
+    }
+  };
+
+  // Google Login
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (googleResponse) => {
+      try {
+        const data = await googleLoginApi(googleResponse.access_token);
+
+        setAuth({
+          user: data.data.user,
+          accessToken: data.data.accessToken,
+          refreshToken: data.data.refreshToken,
+        });
+
+        toast.success("Google Login Successful! 🎉");
+
+        setTimeout(() => {
+          navigate("/my-account");
+        }, 1500);
+      } catch (err) {
+        console.error("Google login failed:", err.response?.data || err);
+        toast.error("Google Login Failed! ❌");
+      }
+    },
+    onError: () => {
+      toast.error("Google Login Failed! ❌");
+    },
+  });
+
   return (
     <div className="min-h-screen bg-primary3 flex items-center justify-center px-4">
       <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg">
-        {/* Heading */}
-        <h2 className="text-3xl font-semibold text-center text-gray-800">
-          Welcome Back
-        </h2>
-        <p className="text-center text-gray-500 mt-2">Login to continue</p>
-
-        {/* Form */}
-        <form className="mt-8 space-y-5">
+        <form className="mt-8 space-y-5" onSubmit={loginHandler}>
           {/* Email */}
           <div>
             <label className="text-gray-700 font-medium">Email</label>
             <input
               type="email"
               placeholder="Enter your email"
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
               className="mt-2 w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
             />
           </div>
@@ -30,6 +86,8 @@ const LoginPage = () => {
             <input
               type="password"
               placeholder="Enter your password"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
               className="mt-2 w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
             />
           </div>
@@ -48,7 +106,7 @@ const LoginPage = () => {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary2 
+            className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary2
              transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer"
           >
             Login
@@ -61,21 +119,10 @@ const LoginPage = () => {
             <div className="flex-1 h-px bg-gray-300" />
           </div>
 
-          {/* Google Login Button */}
-          <GoogleLogin
-            onSuccess={(credentialResponse) => {
-              axios
-                .post("http://localhost:4500/api/user/google-login", {
-                  idToken: credentialResponse.credential,
-                })
-                .then((res) => console.log("Logged In →", res.data))
-                .catch((err) => console.log(err));
-            }}
-            onError={() => console.log("Login Failed")}
-            
-          />
-          {/* <button
+          {/* Google Login */}
+          <button
             type="button"
+            onClick={() => googleLogin()}
             className="w-full py-3 border rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 cursor-pointer"
           >
             <img
@@ -84,15 +131,7 @@ const LoginPage = () => {
               className="w-6 h-6"
             />
             Continue with Google
-          </button> */}
-
-          {/* Signup Link */}
-          {/* <p className="text-center text-sm text-gray-600 mt-4">
-            Don’t have an account?{" "}
-            <Link to="/register" className="text-black font-medium">
-              Create Account
-            </Link>
-          </p> */}
+          </button>
         </form>
       </div>
     </div>

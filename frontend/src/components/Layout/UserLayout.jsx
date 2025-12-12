@@ -14,7 +14,7 @@ const UserLayout = () => {
 
   useEffect(() => {
     showLoader();
-    const timer = setTimeout(() => hideLoader(), 2000);
+    const timer = setTimeout(() => hideLoader(), 900);
 
     return () => clearTimeout(timer);
   }, [location]);

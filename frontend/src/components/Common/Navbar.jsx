@@ -15,11 +15,13 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import CartDrawer from "../Layout/CartDrawer";
 import { useCartStore } from "../../store/cartStore";
+import { useAuthStore } from "../../store/useAuthStore";
 const Navbar = ({ searchModel, setSearchModel }) => {
   const [cartDrawer, setCartDrawer] = useState(false);
   const mobileMenuTimeline = useRef(null);
   const cart = useCartStore((state) => state.cart);
   const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const user = useAuthStore((state) => state.user);
   useGSAP(() => {
     var t1 = gsap.timeline();
 
@@ -101,7 +103,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           <Link to="/" className="hover:text-primary1 menu-item">
             Women
           </Link>
-          <Link to="/" className="hover:text-primary1 menu-item">
+          <Link to="/contact-us" className="hover:text-primary1 menu-item">
             Contact Us
           </Link>
         </div>
@@ -114,7 +116,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           >
             <RiSearch2Line />
           </button>
-          <Link to="" className="hover:text-primary1 md:block hidden">
+          <Link to="/wishlist" className="hover:text-primary1 md:block hidden">
             <RiHeartLine />
           </Link>
           <button
@@ -128,8 +130,24 @@ const Navbar = ({ searchModel, setSearchModel }) => {
               {totalQty}
             </span>
           </button>
-          <Link to="" className="hover:text-primary1 md:block hidden">
-            <RiUser3Line />
+          <Link
+            to="/my-account"
+            className="hover:text-primary1 md:block hidden"
+          >
+            {user ? (
+              <div>
+                
+                {user?.avatar && (
+                  <img
+                    src={user?.avatar}
+                    className="h-8 w-8 rounded-full border-2 border-primary5"
+                    alt={user?.fullName?.charAt(0)}
+                  />
+                )}
+              </div>
+            ) : (
+              <RiUser3Line />
+            )}
           </Link>
         </div>
       </nav>
@@ -163,7 +181,7 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           Women
         </Link>
         <Link
-          to="/"
+          to="/contact-us"
           className="hover:text-primary2 "
           onClick={mobileSidebarClose}
         >
