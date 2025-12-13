@@ -73,12 +73,12 @@ const Footer = () => {
           <div className="flex md:flex-col flex-row">
             <input
             type="text"
-            className="border border-primary4 px-4 py-1 md:rounded-md bg-white text-primary2 outline-0 rounded-tl-xl rounded-bl-xl"
+            className="border border-primary4 px-4 py-2 md:rounded-md bg-white text-primary2 outline-0 rounded-tl-xl rounded-bl-xl"
             placeholder="Enter your email...."
           />
           <button
             to="/shop"
-            className="py-1.5 px-4 rounded-br-xl rounded-tr-xl md:rounded-md font-semibold text-primary2 
+            className="py-2 px-4 rounded-br-xl rounded-tr-xl md:rounded-md font-semibold text-primary2 
                        transition-all duration-300 btn-slide  text-sm cursor-pointer md:mt-4"
           >
             Subscribe

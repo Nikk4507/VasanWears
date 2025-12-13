@@ -10,8 +10,33 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import MyAccount from "./pages/MyAccount";
 import ProtectedRoute from "./components/components/ProtectedRoute";
+import ProfileInformation from "./components/Common/ProfileInformation";
+import ManageAddress from "./components/Common/ManageAddress";
+import { useAuthStore } from "./store/useAuthStore";
+import { useEffect } from "react";
+import { currentUserApi } from "./utils/api";
+import PublicRoute from "./components/components/PublicRoute";
+import MyAccountRightSide from "./components/Common/MyAccountRightSide";
 
 const App = () => {
+  const setUser = useAuthStore((s) => s.setUser);
+  const setAuthChecked = useAuthStore((s) => s.setAuthChecked);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const res = await currentUserApi();
+        setUser(res.data);
+      } catch {
+        // not logged in
+      } finally {
+        setAuthChecked();
+      }
+    };
+
+    initAuth();
+  }, []);
+  
   return (
     <BrowserRouter>
       <Routes>
@@ -19,18 +44,23 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/shop" element={<ShopPage />} />
-          <Route
-            path="/my-account"
-            element={
-              <ProtectedRoute>
-                <MyAccount />
-              </ProtectedRoute>
-            }
-          />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/my-account" element={<MyAccount />}>
+              <Route
+                path="profile-information"
+                element={<ProfileInformation />}
+              />
+              <Route path="addresses" element={<ManageAddress />} />
+              <Route index element={<MyAccountRightSide />} />
+            </Route>
+          </Route>
+
           <Route path="/shop/:id/:name" element={<SingleProductPage />} />
         </Route>{" "}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
         //User Layout
         <Route path="/admin" element={<AdminDashboard />}></Route> //Admin
         Layout

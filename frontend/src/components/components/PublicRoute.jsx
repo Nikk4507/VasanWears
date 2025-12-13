@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import Loader from "../Common/Loader";
 
-const ProtectedRoute = () => {
+const PublicRoute = () => {
   const { user, isAuthChecked } = useAuthStore();
 
   if (!isAuthChecked) {
@@ -13,7 +13,7 @@ const ProtectedRoute = () => {
     ); // or spinner
   }
 
-  return user ? <Outlet /> : <Navigate to="/login" replace />;
+  return user ? <Navigate to="/my-account" replace /> : <Outlet />;
 };
 
-export default ProtectedRoute;
+export default PublicRoute;

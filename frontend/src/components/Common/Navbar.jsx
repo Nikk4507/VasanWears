@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/images/VasanWears.png";
+import default_female_avatar from "../../../public/images/female_default_avatar.png";
+import default_male_avatar from "../../../public/images/male_default_avatar.png";
 import {
   RiCloseLine,
   RiHeartLine,
@@ -136,13 +138,24 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           >
             {user ? (
               <div>
-                
-                {user?.avatar && (
+                {user?.avatar ? (
                   <img
                     src={user?.avatar}
                     className="h-8 w-8 rounded-full border-2 border-primary5"
                     alt={user?.fullName?.charAt(0)}
                   />
+                ) : (
+                  <div className="h-8 w-8 text-white flex justify-center items-center bg-primary4 rounded-full border-primary5/50 border">
+                    <img
+                      src={
+                        user?.gender === "male"
+                          ? default_male_avatar
+                          : default_female_avatar
+                      }
+                      alt={user?.fullName}
+                      className="h-8 w-8 rounded-full object-cover object-top border-2 border-primary5"
+                    />
+                  </div>
                 )}
               </div>
             ) : (

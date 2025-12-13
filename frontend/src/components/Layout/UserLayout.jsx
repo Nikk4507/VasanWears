@@ -12,15 +12,15 @@ const UserLayout = () => {
   const location = useLocation();
   const { showLoader, hideLoader } = useLoaderStore();
 
-  useEffect(() => {
-    showLoader();
-    const timer = setTimeout(() => hideLoader(), 900);
+  // useEffect(() => {
+  //   showLoader();
+  //   const timer = setTimeout(() => hideLoader(), 900);
 
-    return () => clearTimeout(timer);
-  }, [location]);
+  //   return () => clearTimeout(timer);
+  // }, [location]);
   return (
     <>
-      <Loader />
+      {/* <Loader /> */}
       <Header />
       <Outlet />
       {/* <div className='mt-2 h-screen bg-slate-100'></div> */}

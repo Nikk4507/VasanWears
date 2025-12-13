@@ -26,6 +26,9 @@ const userSchema = new mongoose.Schema({
     refreshToken: {
         type: String,
     },
+    gender: {
+        type: String, enum: ["male", "female", "other"], default: "male",
+    },
     googleId: { type: String },
     authType: { type: String, enum: ["manual", "google"], default: "manual" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
@@ -38,14 +41,14 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 userSchema.pre("save", async function () {
-  // Skip hashing if password not modified
-  if (!this.isModified("password")) return;
+    // Skip hashing if password not modified
+    if (!this.isModified("password")) return;
 
-  // Skip hashing for Google users (no password)
-  if (!this.password) return;
+    // Skip hashing for Google users (no password)
+    if (!this.password) return;
 
-  const salt = await bcryptjs.genSalt(10);
-  this.password = await bcryptjs.hash(this.password, salt);
+    const salt = await bcryptjs.genSalt(10);
+    this.password = await bcryptjs.hash(this.password, salt);
 });
 
 

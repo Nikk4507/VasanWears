@@ -2,21 +2,22 @@ import { asyncHandler } from "../utils/AsyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../model/user.model.js";
 import { uploadCloudinary } from "../utils/Cloudinary.js";
-import { OAuth2Client } from "google-auth-library";
-import bcryptjs from "bcryptjs";
 import axios from "axios";
+import jwt from "jsonwebtoken";
 // const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const options = {
     httpOnly: true,
-    secure: true
+    secure: process.env.NODE_ENV === "production",
 }
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
         const accessToken = await user.generateAccessToken();
-        const refreshToken = await user.generateRefreshToken();
-        const hashedRefresh = await bcryptjs.hash(refreshToken, 10);
+        // const refreshToken = await user.generateRefreshToken();
+        const hashedRefresh = await user.generateRefreshToken();
+        // const hashedRefresh = await bcryptjs.hash(refreshToken, 10);
         user.refreshToken = hashedRefresh;
+        user.lastLogin = Date.now();
         await user.save({ validateBeforeSave: false })
         return { accessToken, hashedRefresh }
     } catch (error) {
@@ -116,12 +117,9 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const { accessToken, hashedRefresh } =
+        await generateAccessAndRefreshToken(user._id);
 
-    user.refreshToken = refreshToken;
-    user.lastLogin = Date.now();
-    await user.save();
 
     const loginUser = await User.findById(user._id).select(
         "-password -refreshToken"
@@ -130,12 +128,12 @@ const loginUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("refreshToken", hashedRefresh, options)
         .json(
             new ApiResponse(200, "Login Successful", {
                 user: loginUser,
                 accessToken,
-                refreshToken
+                refreshToken: hashedRefresh
             })
         );
 });
@@ -173,7 +171,6 @@ const googleLogin = asyncHandler(async (req, res) => {
             user = await User.create({
                 fullName: name,
                 email,
-                avatar: picture,
                 googleId,
                 authType: "google",
                 password: null,
@@ -187,13 +184,9 @@ const googleLogin = asyncHandler(async (req, res) => {
     console.log("Created User ", user);
 
     // 4️⃣ Generate tokens
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
-    console.log("Refresh and access ", accessToken, refreshToken);
+    const { accessToken, hashedRefresh } =
+    await generateAccessAndRefreshToken(user._id);
 
-    user.refreshToken = refreshToken;
-    user.lastLogin = Date.now();
-    await user.save({ validateBeforeSave: false });
 
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
@@ -203,31 +196,36 @@ const googleLogin = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("refreshToken", hashedRefresh, options)
         .json(
             new ApiResponse(200, "Google Login Successful", {
                 user: loggedInUser,
                 accessToken,
-                refreshToken,
+                refreshToken: hashedRefresh,
             })
         );
 });
 const logoutHandler = asyncHandler(async (req, res) => {
-    const userId = req?.user._id;
-    if (!userId) {
-        return res
-            .status(400)
-            .json(new ApiResponse(401, "User is not found.", null));
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+        const decoded = jwt.decode(refreshToken);
+        if (decoded?._id) {
+            const user = await User.findById(decoded._id);
+            if (user) {
+                user.refreshToken = null;
+                await user.save({ validateBeforeSave: false });
+            }
+        }
     }
-    const user = await User.findById(userId);
-    user.refreshToken = null;
-    await user.save({ validateBeforeSave: false });
+
     return res
-        .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
+        .status(200)
         .json(new ApiResponse(200, "Logout Successful", null));
 });
+
 const currentUser = asyncHandler(async (req, res) => {
     const userId = req?.user._id;
     if (!userId) {
@@ -252,4 +250,55 @@ const userProfile = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, "User Found Successfully", user));
 })
-export { registerUser, loginUser, currentUser, userProfile, googleLogin , logoutHandler };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        return res
+            .status(401)
+            .json(new ApiResponse(401, "Refresh token missing", null));
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+    } catch (error) {
+        return res
+            .status(401)
+            .json(new ApiResponse(401, "Refresh token expired", null));
+    }
+
+    const user = await User.findById(decoded._id);
+
+    if (!user || !user.refreshToken) {
+        return res
+            .status(401)
+            .json(new ApiResponse(401, "Invalid refresh token", null));
+    }
+
+    // ✅ SIMPLE STRING MATCH (NO BCRYPT)
+    if (incomingRefreshToken !== user.refreshToken) {
+        return res
+            .status(401)
+            .json(new ApiResponse(401, "Refresh token mismatch", null));
+    }
+
+    const accessToken = user.generateAccessToken();
+    console.log("Access token worked");
+    
+    return res
+        .cookie("accessToken", accessToken, options)
+        .status(200)
+        .json(
+            new ApiResponse(200, "Access token refreshed", {
+                accessToken,
+            })
+        );
+});
+
+
+export { registerUser, loginUser, currentUser, userProfile, googleLogin, logoutHandler, generateAccessAndRefreshToken, refreshAccessToken };

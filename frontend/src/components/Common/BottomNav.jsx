@@ -1,16 +1,16 @@
 import React from "react";
-import { 
+import {
   RiGridFill,
   RiUserLine,
   RiSearchLine,
-  RiShoppingBag3Line, 
-  RiShoppingBagLine
+  RiShoppingBag3Line,
+  RiShoppingBagLine,
 } from "@remixicon/react";
+import { Link } from "react-router-dom";
 
 const BottomNav = () => {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white shadow-md py-2.5 px-4 flex justify-around items-center md:hidden z-50">
-
       {/* Shop */}
       <div className="flex flex-col items-center text-gray-600">
         <RiGridFill size={22} />
@@ -18,10 +18,12 @@ const BottomNav = () => {
       </div>
 
       {/* My Account */}
-      <div className="flex flex-col items-center text-gray-600">
-        <RiUserLine size={22} />
-        <span className="text-xs mt-1">My account</span>
-      </div>
+      <Link to="/my-account">
+        <div className="flex flex-col items-center text-gray-600">
+          <RiUserLine size={22} />
+          <span className="text-xs mt-1">My account</span>
+        </div>
+      </Link>
 
       {/* Search */}
       <div className="flex flex-col items-center text-gray-600">

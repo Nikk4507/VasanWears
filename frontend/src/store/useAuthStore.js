@@ -1,33 +1,28 @@
 import { create } from "zustand";
+import { currentUserApi } from "../utils/api";
 
 export const useAuthStore = create((set) => ({
-  user: JSON.parse(localStorage.getItem("user")) || null,
-  accessToken: localStorage.getItem("accessToken") || null,
-  refreshToken: localStorage.getItem("refreshToken") || null,
+  user: null,
+  isAuthChecked: false, // 👈 NEW
 
-  // Set authentication data
-  setAuth: ({ user, accessToken, refreshToken }) =>
-    set(() => {
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+  setUser: (user) =>
+    set({ user }),
 
-      return { user, accessToken, refreshToken };
-    }),
-
-  // Clear auth data
-  logout: () =>
-    set(() => {
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
-      return { user: null, accessToken: null, refreshToken: null };
-    }),
-
-  // Check if logged in
-  isAuthenticated: () => {
-    const token = localStorage.getItem("accessToken");
-    return !!token;
+  setAuthChecked: () =>
+    set({ isAuthChecked: true }),
+  fetchCurrentUser: async () => {
+    try {
+      const res = await currentUserApi();
+      console.log("res", res.data);
+      
+      set({ user: res.data });
+    } catch {
+      set({ user: null });
+    }
   },
+  logout: () =>
+    set({
+      user: null,
+      isAuthChecked: true,
+    }),
 }));

@@ -10,20 +10,15 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const fetchCurrentUser = useAuthStore((state) => state.fetchCurrentUser);
 
   // Login with email/password
   const loginHandler = async (e) => {
     e.preventDefault();
 
     try {
-      const data = await loginUser(email, password);
-
-      setAuth({
-        user: data.data.user,
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
-      });
+      await loginUser(email, password);
+      await fetchCurrentUser();
 
       toast.success("Login Successful! 🎉");
 
@@ -41,13 +36,8 @@ const LoginPage = () => {
   const googleLogin = useGoogleLogin({
     onSuccess: async (googleResponse) => {
       try {
-        const data = await googleLoginApi(googleResponse.access_token);
-
-        setAuth({
-          user: data.data.user,
-          accessToken: data.data.accessToken,
-          refreshToken: data.data.refreshToken,
-        });
+        await googleLoginApi(googleResponse.access_token);
+        await fetchCurrentUser();
 
         toast.success("Google Login Successful! 🎉");
 

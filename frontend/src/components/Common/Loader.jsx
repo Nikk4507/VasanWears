@@ -2,9 +2,9 @@ import React from "react";
 import { useLoaderStore } from "../../store/useLoaderStore";
 import { Bars } from 'react-loader-spinner'
 const Loader = () => {
-  const loading = useLoaderStore((state) => state.loading);
+  // const loading = useLoaderStore((state) => state.loading);
 
-  if (!loading) return null;
+  // if (!loading) return null;
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-primary3">
