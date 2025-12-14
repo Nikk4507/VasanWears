@@ -85,7 +85,7 @@ const OfferSection = () => {
         ref={marqueeRef}
         className="flex overflow-hidden bg-primary4 select-none"
       >
-        {Array(4)
+        {Array(8)
           .fill(0)
           .map((_, i) => (
             <div

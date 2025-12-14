@@ -70,7 +70,7 @@ const ProfileInformation = () => {
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-1 text-blue-600"
+              className="flex items-center gap-1 text-primary2 cursor-pointer bg-primary1 px-4 py-2 rounded-lg hover:bg-primary2 hover:text-white transition-all duration-500"
             >
               <RiEdit2Line size={20} /> Edit
             </button>

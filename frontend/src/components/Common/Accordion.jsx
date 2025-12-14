@@ -37,7 +37,7 @@ const Accordion = ({ title, children }) => {
     <div className="border-b py-3 md:pb-3 md:py-0 border-b-primary1/50">
       <button
         onClick={toggleAccordion}
-        className="w-full flex justify-between items-center text-left font-semibold text-base cursor-pointer"
+        className="w-full flex justify-between items-center text-left font-semibold text-sm cursor-pointer"
       >
         {title}
         <span>{open ? <RiArrowUpSLine /> : <RiArrowDownSLine />}</span>

@@ -17,6 +17,11 @@ import { useEffect } from "react";
 import { currentUserApi } from "./utils/api";
 import PublicRoute from "./components/components/PublicRoute";
 import MyAccountRightSide from "./components/Common/MyAccountRightSide";
+import Designer from "./pages/Designer";
+import Orders from "./components/Common/Orders";
+import SingleOrder from "./components/Common/SingleOrder";
+import Wishlist from "./pages/WishList";
+import Coupons from "./components/Common/Coupon";
 
 const App = () => {
   const setUser = useAuthStore((s) => s.setUser);
@@ -36,7 +41,7 @@ const App = () => {
 
     initAuth();
   }, []);
-  
+
   return (
     <BrowserRouter>
       <Routes>
@@ -44,13 +49,19 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/shop" element={<ShopPage />} />
+
           <Route element={<ProtectedRoute />}>
+            <Route path="/design" element={<Designer />}></Route>
+            <Route path="/wishlist" element={<Wishlist />}></Route>
             <Route path="/my-account" element={<MyAccount />}>
               <Route
                 path="profile-information"
                 element={<ProfileInformation />}
               />
               <Route path="addresses" element={<ManageAddress />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="orders/:id" element={<SingleOrder />} />
+              <Route path="coupons" element={<Coupons />} />
               <Route index element={<MyAccountRightSide />} />
             </Route>
           </Route>

@@ -36,9 +36,9 @@ const MyAccount = () => {
       ],
     },
     {
-      label: "PAYMENTS",
+      label: "ORDERS DETAILS",
       children: [
-        { label: "Gift Cards", tab: "giftcards" },
+        { label: "Orders", tab: "orders" },
         { label: "Saved UPI", tab: "upi" },
         { label: "Saved Cards", tab: "cards" },
       ],
@@ -82,9 +82,9 @@ const MyAccount = () => {
                 />
               </div>
             )}
-            <p className="text-gray-800 font-semibold mt-2 text-center">
+            <h3 className="text-primary5 text-xl font-semibold mt-2 text-center">
               Hello, {user?.fullName}
-            </p>
+            </h3>
           </div>
 
           {/* Accordion Menu */}
@@ -95,12 +95,12 @@ const MyAccount = () => {
                   <button
                     key={idx}
                     onClick={() => navigate(`/my-account/${child.tab}`)}
-                    className={`text-left w-full px-2 py-1 rounded-md cursor-pointer 
-    hover:bg-gray-100 transition 
+                    className={`text-left w-full px-3 py-2 rounded-md cursor-pointer text-sm
+     transition 
     ${
       location.pathname.includes(child.tab)
-        ? "bg-primary1/10 text-primary1 font-medium"
-        : "text-gray-700"
+        ? "bg-primary1/80 text-primary2 font-medium hover:bg-primary1"
+        : "text-primary2 hover:bg-primary3"
     }
   `}
                   >
