@@ -23,6 +23,10 @@ import SingleOrder from "./components/Common/SingleOrder";
 import Wishlist from "./pages/WishList";
 import Coupons from "./components/Common/Coupon";
 import ScrollToHash from "./components/components/ScrollToHash";
+import CartPage from "./pages/CartPage";
+import Checkout from "./pages/Checkout";
+import ThankYou from "./pages/ThankYou";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   const setUser = useAuthStore((s) => s.setUser);
@@ -45,16 +49,20 @@ const App = () => {
 
   return (
     <BrowserRouter>
-    <ScrollToHash/>
+      <ScrollToHash />
       <Routes>
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/shop" element={<ShopPage />} />
+          <Route path="*" element={<NotFound />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/design" element={<Designer />}></Route>
+            <Route path="/cart" element={<CartPage />}></Route>
             <Route path="/wishlist" element={<Wishlist />}></Route>
+            <Route path="/checkout" element={<Checkout />}></Route>
+            <Route path="/thank-you" element={<ThankYou />}></Route>
             <Route path="/my-account" element={<MyAccount />}>
               <Route
                 path="profile-information"
