@@ -223,11 +223,11 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
               </span>{" "}
             </div>
             <Link to="/cart" className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary3 
-             transition-all duration-300 btn-slide2 md:text-base text-sm cursor-pointer text-center">
+             transition-all duration-300 btn-slide2 md:text-base text-sm cursor-pointer text-center" onClick={() => setCartDrawer(false)}>
               View Cart
             </Link>
             <Link to="/checkout" className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary2 
-             transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer text-center">
+             transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer text-center" onClick={() => setCartDrawer(false)}>
               Checkout
             </Link>
           </div>

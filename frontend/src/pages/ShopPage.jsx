@@ -210,10 +210,10 @@ const ShopPage = () => {
   };
 
   return (
-    <div className="md:py-10 pt-10">
+    <div className="md:mt-35 mt-30">
       <Banner pageTitle={pageTitle} />
 
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-5 py-5 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
           {/* ----------------- LEFT SIDEBAR FILTER (DESKTOP) ----------------- */}
           <aside className="space-y-6 border-r pr-5 hidden lg:block border-primary5/20">
