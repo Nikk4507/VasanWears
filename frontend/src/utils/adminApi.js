@@ -65,7 +65,7 @@ export const updateCategoryApi = async (categoryId, formData) => {
 };
 export const deleteCategoryApi = async (categoryId) => {
   try {
-    const res = await API.delete(`/categories/${categoryId}`);  
+    const res = await API.delete(`/categories/${categoryId}`);
     return res.data;
   } catch (err) {
     console.error("Delete Category Error:", err);
@@ -108,6 +108,25 @@ export const updateSubCategoryApi = async (subCategoryId, data) => {
     throw err;
   }
 };
+export const getAllProductsAdminApi = async () => {
+  try {
+    const res = await API.get("/products");
+    return res.data;
+  } catch (err) {
+    console.error("Get Products Error:", err);
+    throw err;
+  }
+};
+export const getProductByIdAdminApi = async (id) => {
+  try {
+    const res = await API.get(`/products/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error("Get Products Error:", err);
+    throw err;
+  }
+};
+
 API.interceptors.response.use(
   res => res,
   async (error) => {

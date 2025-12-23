@@ -23,6 +23,7 @@ const slides = [
     title: "NEW ARRIVALS",
     button: "SHOP NOW",
   },
+  
 ];
 
 const HeroSlider = () => {

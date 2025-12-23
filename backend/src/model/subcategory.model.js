@@ -11,7 +11,6 @@ const subCategorySchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
     },
     category: {
@@ -30,6 +29,10 @@ const subCategorySchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+subCategorySchema.index(
+  { slug: 1, category: 1 },
+  { unique: true }
 );
 
 export const SubCategory = mongoose.model("SubCategory", subCategorySchema);

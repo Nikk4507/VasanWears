@@ -1,48 +1,64 @@
 import mongoose from "mongoose";
 
 /**
- * PRODUCT VARIANT SUB-SCHEMA (embedded)
+ * VARIANT SUB-SCHEMA
  */
+
 const productVariantSchema = new mongoose.Schema(
   {
-    colors: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    sizes: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    color: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Color",
+      required: true,
+    },
+
+    size: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Size",
+      default: null, // 👈 null = ANY SIZE
+    },
     sku: {
       type: String,
       required: true,
       trim: true,
     },
+
     regularPrice: {
       type: Number,
       required: true,
     },
+
     salePrice: {
       type: Number,
     },
+
     stock: {
       type: Number,
-      default: 0,
+      required: true,
+      min: 0,
     },
-    featuredImage: {
-      type: String,
-    },
-    gallery: [String],
+
+    featuredImage: String,
+    gallery: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        type: {
+          type: String,
+          enum: ["image", "video"],
+          required: true,
+        },
+      },
+    ],
+
   },
   { _id: true }
 );
 
 /**
- * PRODUCT SCHEMA
+ * PRODUCT SCHEMA (VARIANT ONLY)
  */
 const productSchema = new mongoose.Schema(
   {
@@ -59,48 +75,65 @@ const productSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    colors: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Color",
+      },
+    ],
 
+    sizes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Size",
+      },
+    ],
     description: {
       type: String,
       required: true,
     },
 
-    productType: {
-      type: String,
-      enum: ["simple", "variant"],
-      default: "simple",
-    },
-
-    regularPrice: {
-      type: Number,
-      required: function () {
-        return this.productType === "simple";
+    variants: {
+      type: [productVariantSchema],
+      validate: {
+        validator: (v) => v.length > 0,
+        message: "At least one variant is required",
       },
     },
-
-    salePrice: {
-      type: Number,
-    },
-
-    stock: {
-      type: Number,
-      required: function () {
-        return this.productType === "simple";
-      },
-    },
-
-    variants: [productVariantSchema], // ✅ Embedded variants
 
     featuredImage: {
       type: String,
       required: true,
     },
+    hoverImage: {
+      type: String,
+      required: true,
+    },
 
-    gallery: [String],
+    gallery: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        type: {
+          type: String,
+          enum: ["image", "video"],
+          required: true,
+        },
+      },
+    ],
+
 
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
+      required: true,
+    },
+
+    subCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubCategory",
       required: true,
     },
 
@@ -115,6 +148,7 @@ const productSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     averageRating: {
       type: Number,
       default: 0,
@@ -124,9 +158,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
   },
-
   { timestamps: true }
 );
 

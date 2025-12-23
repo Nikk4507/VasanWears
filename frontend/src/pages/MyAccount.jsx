@@ -20,10 +20,12 @@ const MyAccount = () => {
   
   const logoutHandler = async () => {
     try {
-      navigate("/", { replace: true });
       await logoutUser();
       logout();
-      
+      toast.success("Login Successful! 🎉");
+      navigate("/", { replace: true });
+
+
     } catch (error) {
       console.error("Logout failed:", error.response?.data || error);
     }

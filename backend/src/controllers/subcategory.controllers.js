@@ -34,11 +34,15 @@ const createSubCategory = asyncHandler(async (req, res) => {
   }
 
   // Prevent duplicate slug
-  const exists = await SubCategory.findOne({ slug });
+  const exists = await SubCategory.findOne({
+    slug,
+    category: categoryId,
+  });
+
   if (exists) {
     return res
       .status(409)
-      .json(new ApiResponse(409, "SubCategory with this slug already exists"));
+      .json(new ApiResponse(409, "SubCategory with this slug already exists in this category"));
   }
 
   const subCategory = await SubCategory.create({
