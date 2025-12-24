@@ -92,7 +92,11 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    tags: [
+      {
+        type: String,
+      },
+    ],
     variants: {
       type: [productVariantSchema],
       validate: {

@@ -8,9 +8,46 @@ import {
   updateProductApi,
 } from "../../../utils/productApi";
 import { API, getAllCategoriesWithSubCatApi } from "../../../utils/adminApi";
-const AddProduct = () => {
+const EditProduct = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [editingIndex, setEditingIndex] = useState(null);
+  const addTag = () => {
+    const value = tagInput.trim().toLowerCase();
+    if (!value) return;
+
+    if (tags.includes(value)) {
+      toast.error("Tag already exists");
+      return;
+    }
+
+    setTags([...tags, value]);
+    setTagInput("");
+  };
+
+  const removeTag = (index) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
+
+  const startEditTag = (index) => {
+    setEditingIndex(index);
+    setTagInput(tags[index]);
+  };
+
+  const updateTag = () => {
+    const value = tagInput.trim().toLowerCase();
+    if (!value) return;
+
+    const updated = [...tags];
+    updated[editingIndex] = value;
+
+    setTags(updated);
+    setEditingIndex(null);
+    setTagInput("");
+  };
+
   const [availableColors, setAvailableColors] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
 
@@ -74,9 +111,19 @@ const AddProduct = () => {
   };
 
   const handleVariantChange = (index, field, value) => {
-    const updated = [...variants];
-    updated[index][field] = value;
-    setVariants(updated);
+    setVariants((prev) =>
+      prev.map((v, i) =>
+        i === index
+          ? {
+              ...v,
+              [field]: value,
+              featuredImage:
+                field === "featuredImage" ? value : v.featuredImage,
+              gallery: field === "gallery" ? value : v.gallery,
+            }
+          : v
+      )
+    );
   };
 
   const addVariant = () => {
@@ -118,9 +165,12 @@ const AddProduct = () => {
       toast.error("Required fields are missing");
       return;
     }
-    if (!designImages.front) {
+    if (
+      !designImages.front ||
+      (typeof designImages.front !== "string" &&
+        !(designImages.front instanceof File))
+    ) {
       toast.error("Front design image is mandatory");
-      setLoading(false);
       return;
     }
 
@@ -134,16 +184,29 @@ const AddProduct = () => {
       const formData = new FormData();
       const designMeta = [];
 
-      Object.entries(designImages).forEach(([side, file]) => {
-        if (file && file instanceof File) {
-          formData.append("designImages", file);
-          designMeta.push({ side });
+      Object.entries(designImages).forEach(([side, value]) => {
+        // Case 1: New file uploaded
+        if (value instanceof File) {
+          formData.append(`designImages_${side}`, value);
+          designMeta.push({ side, action: "replace" });
+        }
+
+        // Case 2: Existing image (URL or object)
+        else if (value === null) {
+          designMeta.push({
+            side,
+            action: "remove",
+          });
+        } else if (typeof value === "string" || value?.url) {
+          designMeta.push({
+            side,
+            action: "keep",
+            url: value.url || value,
+          });
         }
       });
 
-      if (designMeta.length) {
-        formData.append("designImagesMeta", JSON.stringify(designMeta));
-      }
+      formData.append("designImagesMeta", JSON.stringify(designMeta));
 
       // TEXT FIELDS
       formData.append("title", form.title);
@@ -159,7 +222,19 @@ const AddProduct = () => {
       formData.append(
         "variants",
         JSON.stringify(
-          variants.map(({ featuredImage, gallery, ...rest }) => rest)
+          variants.map((v) => ({
+            sku: v.sku,
+            colorId: v.colorId,
+            sizeId: v.sizeId ?? null,
+            regularPrice: v.regularPrice,
+            salePrice: v.salePrice,
+            stock: v.stock,
+            featuredImage:
+              typeof v.featuredImage === "string" ? v.featuredImage : null,
+            gallery: (v.gallery || []).filter(
+              (g) => typeof g === "object" && g.url
+            ),
+          }))
         )
       );
 
@@ -188,6 +263,7 @@ const AddProduct = () => {
       });
       formData.append("sizes", JSON.stringify(savedSizes));
       formData.append("colors", JSON.stringify(savedColors));
+      formData.append("tags", JSON.stringify(tags));
 
       if (slug && productId) {
         await updateProductApi(productId, formData);
@@ -222,6 +298,10 @@ const AddProduct = () => {
         gallery: [],
       });
     });
+    if (slug) {
+      toast.error("Variants already exist. Edit them instead.");
+      return;
+    }
 
     setVariants(newVariants);
   };
@@ -256,8 +336,9 @@ const AddProduct = () => {
       return;
     }
 
-    setSavedColors(selectedColors);
-    setSavedSizes(selectedSizes);
+    setSavedColors([...new Set(selectedColors)]);
+    setSavedSizes([...new Set(selectedSizes)]);
+
     setAttributeSaved(true);
 
     toast.success("Attributes saved");
@@ -289,20 +370,31 @@ const AddProduct = () => {
         description: p.description,
         status: p.status,
       });
+      setTags(p.tags || []);
 
       setSelectedCategory(p.category?._id);
       setSelectedSubCategory(p.subCategory?._id || null);
 
-      setSelectedColors(p.colors || []);
-      setSelectedSizes(p.sizes || []);
-      setSavedColors(p.colors || []);
-      setSavedSizes(p.sizes || []);
+      const colorIds = (p.colors || []).map((c) => c._id);
+      const sizeIds = (p.sizes || []).map((s) => s._id);
+
+      setSelectedColors(colorIds);
+      setSelectedSizes(sizeIds);
+
+      setSavedColors(colorIds);
+      setSavedSizes(sizeIds);
 
       setVariants(
         p.variants.map((v) => ({
           ...v,
-          colorId: v.color,
-          sizeId: v.size ?? null,
+          colorId: typeof v.color === "object" ? v.color._id : String(v.color),
+
+          sizeId: v.size
+            ? typeof v.size === "object"
+              ? v.size._id
+              : String(v.size)
+            : null,
+
           featuredImage: v.featuredImage || null,
           gallery: v.gallery || [],
         }))
@@ -316,12 +408,15 @@ const AddProduct = () => {
 
       // populate design images (backend uses `desginImage` field)
       const designMap = { front: null, back: null, left: null, right: null };
+
       const designArr = p.desginImage || p.designImage || p.designImages || [];
-      if (Array.isArray(designArr)) {
-        designArr.forEach((d) => {
-          if (d && d.side) designMap[d.side] = d.url || d;
-        });
-      }
+
+      designArr.forEach((d) => {
+        if (d?.side && d?.url) {
+          designMap[d.side] = d.url;
+        }
+      });
+
       setDesignImages(designMap);
 
       setAttributeSaved(true);
@@ -777,6 +872,63 @@ const AddProduct = () => {
             ))}
           </div>
         </div>
+        {/* TAGS */}
+        <div className="border p-4 rounded space-y-3">
+          <h3 className="font-medium">Product Tags</h3>
+          <p className="text-xs text-gray-500">
+            Press Enter to add tag (e.g. oversized, cotton)
+          </p>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  editingIndex !== null ? updateTag() : addTag();
+                }
+              }}
+              placeholder="Enter tag"
+              className="border p-2 rounded w-full"
+            />
+
+            <button
+              type="button"
+              onClick={editingIndex !== null ? updateTag : addTag}
+              className="px-4 bg-primary5 text-white rounded"
+            >
+              {editingIndex !== null ? "Update" : "Add"}
+            </button>
+          </div>
+
+          {/* TAG LIST */}
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag, index) => (
+              <span
+                key={index}
+                className="flex items-center gap-2 bg-primary3 px-3 py-1 rounded-full text-sm"
+              >
+                #{tag}
+                <button
+                  type="button"
+                  onClick={() => startEditTag(index)}
+                  className="text-blue-600 text-xs"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeTag(index)}
+                  className="text-red-600 text-xs"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
 
         <select
           name="status"
@@ -814,4 +966,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default EditProduct;

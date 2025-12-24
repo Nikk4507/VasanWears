@@ -42,6 +42,8 @@ import AddProduct from "./components/Admin/pages/AddProduct";
 import AdminCategory from "./components/Admin/pages/AdminCategory";
 import SizePage from "./components/Admin/pages/SizePage";
 import ColorPage from "./components/Admin/pages/ColorPage";
+import ForgotPassword from "./components/Admin/pages/ForgotPassword";
+import ResetPassword from "./components/Admin/pages/ResetPassword";
 const App = () => {
   const setUser = useAuthStore((s) => s.setUser);
   const setAuthChecked = useAuthStore((s) => s.setAuthChecked);
@@ -77,6 +79,9 @@ const App = () => {
           <Route path="/shop/:id/:slug" element={<SingleProductPage />} />
           <Route path="/blogs" element={<BlogsPage />} />
           <Route path="/blogs/:blogId" element={<SingleBlogPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
           <Route path="*" element={<NotFound />} />
 
           <Route element={<ProtectedRoute />}>

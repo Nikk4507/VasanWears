@@ -161,3 +161,21 @@ export const getAllSizesForWebsite = async () => {
         throw err;
     }
 };
+export const forgetPasswordApi = async (email) => {
+    try {
+        const res = await API.post("/user/forgot-password", { email });
+        return res.data;
+    } catch (err) {
+        console.error("Forget Password Error:", err);
+        throw err;
+    }
+};
+export const resetPasswordApi = async (token, password) => {
+    try {
+        const res = await API.post(`/user/reset-password/${token}`, { password });
+        return res.data;
+    } catch (err) {
+        console.error("Reset Password Error:", err);
+        throw err;
+    }
+};

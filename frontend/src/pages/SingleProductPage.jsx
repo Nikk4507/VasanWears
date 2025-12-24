@@ -21,6 +21,15 @@ const serviceablePincodes = {
   700001: "4–6 Days",
   560001: "2–3 Days",
 };
+const SIZE_ORDER = {
+  XS: 1,
+  S: 2,
+  M: 3,
+  L: 4,
+  XL: 5,
+  XXL: 6,
+  XXXL: 7,
+};
 
 const SingleProductPage = () => {
   const { slug } = useParams();
@@ -73,6 +82,25 @@ const SingleProductPage = () => {
 
     fetchProduct();
   }, [slug]);
+  const sortedSizes = useMemo(() => {
+    if (!product?.sizes) return [];
+
+    return [...product.sizes].sort((a, b) => {
+      // Handle named sizes (S, M, L...)
+      if (SIZE_ORDER[a.name] && SIZE_ORDER[b.name]) {
+        return SIZE_ORDER[a.name] - SIZE_ORDER[b.name];
+      }
+
+      // Handle numeric sizes (28, 30, 32...)
+      if (!isNaN(a.name) && !isNaN(b.name)) {
+        return Number(a.name) - Number(b.name);
+      }
+
+      // Fallback
+      return a.name.localeCompare(b.name);
+    });
+  }, [product]);
+
   const media = useMemo(() => {
     if (!selectedVariant) return [];
 
@@ -304,7 +332,9 @@ const SingleProductPage = () => {
                   className="w-full h-full object-cover"
                 />
               )}
-
+              <div className="absolute top-1/3 right-[37%]">
+                <img src={product?.desginImage[0]?.url} className="w-40 h-40" />
+              </div>
               {/* Slider Controls */}
               <button
                 onClick={() =>
@@ -375,7 +405,7 @@ const SingleProductPage = () => {
             <div className="mb-4">
               <p className="font-medium mb-3">Size:</p>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
+                {sortedSizes.map((size) => (
                   <button
                     key={size._id}
                     onClick={() => handleSizeChange(size._id)}

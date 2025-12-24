@@ -9,6 +9,7 @@ import default_male_avatar from "../../public/images/male_default_avatar.png";
 import gsap from "gsap";
 import Accordion from "../components/Common/Accordion"; // <-- using your Accordion component
 import { RiArrowLeftLine, RiArrowRightLine } from "@remixicon/react";
+import toast from "react-hot-toast";
 
 const MyAccount = () => {
   const navigate = useNavigate();

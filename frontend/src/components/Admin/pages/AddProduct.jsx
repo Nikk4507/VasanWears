@@ -5,6 +5,43 @@ import { createProductApi } from "../../../utils/productApi";
 import { API, getAllCategoriesWithSubCatApi } from "../../../utils/adminApi";
 const AddProduct = () => {
   const navigate = useNavigate();
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [editingIndex, setEditingIndex] = useState(null);
+  const addTag = () => {
+    const value = tagInput.trim().toLowerCase();
+    if (!value) return;
+
+    if (tags.includes(value)) {
+      toast.error("Tag already exists");
+      return;
+    }
+
+    setTags([...tags, value]);
+    setTagInput("");
+  };
+
+  const removeTag = (index) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
+
+  const startEditTag = (index) => {
+    setEditingIndex(index);
+    setTagInput(tags[index]);
+  };
+
+  const updateTag = () => {
+    const value = tagInput.trim().toLowerCase();
+    if (!value) return;
+
+    const updated = [...tags];
+    updated[editingIndex] = value;
+
+    setTags(updated);
+    setEditingIndex(null);
+    setTagInput("");
+  };
+
   const [availableColors, setAvailableColors] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
 
@@ -142,6 +179,7 @@ const AddProduct = () => {
       formData.append("slug", form.slug);
       formData.append("description", form.description);
       formData.append("category", selectedCategory);
+
       if (selectedSubCategory) {
         formData.append("subCategory", selectedSubCategory);
       }
@@ -175,6 +213,7 @@ const AddProduct = () => {
       });
       formData.append("sizes", JSON.stringify(savedSizes));
       formData.append("colors", JSON.stringify(savedColors));
+      formData.append("tags", JSON.stringify(tags));
 
       await createProductApi(formData);
 
@@ -661,6 +700,63 @@ const AddProduct = () => {
                   </div>
                 )}
               </div>
+            ))}
+          </div>
+        </div>
+        {/* TAGS */}
+        <div className="border p-4 rounded space-y-3">
+          <h3 className="font-medium">Product Tags</h3>
+          <p className="text-xs text-gray-500">
+            Press Enter to add tag (e.g. oversized, cotton)
+          </p>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  editingIndex !== null ? updateTag() : addTag();
+                }
+              }}
+              placeholder="Enter tag"
+              className="border p-2 rounded w-full"
+            />
+
+            <button
+              type="button"
+              onClick={editingIndex !== null ? updateTag : addTag}
+              className="px-4 bg-primary5 text-white rounded"
+            >
+              {editingIndex !== null ? "Update" : "Add"}
+            </button>
+          </div>
+
+          {/* TAG LIST */}
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag, index) => (
+              <span
+                key={index}
+                className="flex items-center gap-2 bg-primary3 px-3 py-1 rounded-full text-sm"
+              >
+                #{tag}
+                <button
+                  type="button"
+                  onClick={() => startEditTag(index)}
+                  className="text-blue-600 text-xs"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeTag(index)}
+                  className="text-red-600 text-xs"
+                >
+                  ✕
+                </button>
+              </span>
             ))}
           </div>
         </div>

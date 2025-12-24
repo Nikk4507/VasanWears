@@ -70,13 +70,17 @@ const createProduct = asyncHandler(async (req, res) => {
   let featuredImageFile = null;
   let hoverImageFile = null;
   const productGalleryFiles = [];
-  const designImageFiles = [];
 
+  const designFilesBySide = {};
   for (const file of req.files || []) {
     if (file.fieldname === "featuredImage") featuredImageFile = file;
     if (file.fieldname === "hoverImage") hoverImageFile = file;
     if (file.fieldname === "gallery") productGalleryFiles.push(file);
-    if (file.fieldname === "designImages") designImageFiles.push(file);
+    // if (file.fieldname === "designImages") designImageFiles.push(file);
+    if (file.fieldname.startsWith("designImages_")) {
+      const side = file.fieldname.replace("designImages_", "");
+      designFilesBySide[side] = file;
+    }
   }
 
   if (!featuredImageFile || !hoverImageFile) {
@@ -120,17 +124,30 @@ const createProduct = asyncHandler(async (req, res) => {
 
   const designImages = [];
 
-  for (let i = 0; i < designImageFiles.length; i++) {
-    const file = designImageFiles[i];
-    const meta = parsedDesignMeta[i];
+  for (const meta of parsedDesignMeta) {
+    const { side, action, url: existingUrl } = meta;
 
-    const url = await uploadToS3(file, "products/design");
+    // 🔁 REPLACE
+    if (action === "replace") {
+      const file = designFilesBySide[side];
+      if (!file) {
+        return res.status(400).json(
+          new ApiResponse(400, `Missing design image file for ${side}`)
+        );
+      }
 
-    designImages.push({
-      url,
-      side: meta.side,
-    });
+      const url = await uploadToS3(file, "products/design");
+      designImages.push({ side, url });
+    }
+
+    // ✅ KEEP
+    if (action === "keep") {
+      designImages.push({ side, url: existingUrl });
+    }
+
+    // ❌ REMOVE → do nothing (image is removed)
   }
+
 
   /* ================= PARSE & FIX VARIANTS ================= */
 
@@ -207,7 +224,13 @@ const createProduct = asyncHandler(async (req, res) => {
         .json(new ApiResponse(400, "Each variant must have a featured image"));
     }
   }
+  const tags = req.body.tags ? JSON.parse(req.body.tags) : [];
 
+  if (!Array.isArray(tags)) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, "Tags must be an array"));
+  }
   /* ================= CREATE PRODUCT ================= */
 
   const product = await Product.create({
@@ -218,6 +241,7 @@ const createProduct = asyncHandler(async (req, res) => {
     subCategory: subCategory || null,
     colors,
     sizes,
+    tags,
     variants: parsedVariants,
     featuredImage: featuredImageUrl,
     hoverImage: hoverImageUrl,
@@ -287,6 +311,18 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
     product.sizes = sizes;
   }
+  /* ================= TAGS ================= */
+  if (req.body.tags) {
+    const tags = JSON.parse(req.body.tags);
+
+    if (!Array.isArray(tags)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, "Tags must be an array"));
+    }
+
+    product.tags = tags; // ✅ overwrite safely
+  }
 
   /* ================= SUBCATEGORY VALIDATION ================= */
   if (subCategory) {
@@ -307,13 +343,17 @@ const updateProduct = asyncHandler(async (req, res) => {
   let featuredImageFile = null;
   let hoverImageFile = null;
   const galleryFiles = [];
-  const designImageFiles = [];
+  const designFilesBySide = {};
+
 
   for (const file of req.files || []) {
     if (file.fieldname === "featuredImage") featuredImageFile = file;
     if (file.fieldname === "hoverImage") hoverImageFile = file;
     if (file.fieldname === "gallery") galleryFiles.push(file);
-    if (file.fieldname === "designImages") designImageFiles.push(file);
+    if (file.fieldname.startsWith("designImages_")) {
+      const side = file.fieldname.replace("designImages_", "");
+      designFilesBySide[side] = file;
+    }
   }
 
   /* ================= IMAGE UPDATES ================= */
@@ -344,27 +384,54 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 
   /* ================= DESIGN IMAGES ================= */
-  if (designImageFiles.length) {
-    const parsedDesignMeta = designImagesMeta
-      ? JSON.parse(designImagesMeta)
-      : [];
+  if (designImagesMeta) {
+    const parsedDesignMeta = JSON.parse(designImagesMeta);
 
-    const designImages = [];
+    // Start from existing images
+    const existingMap = {};
+    (product.desginImage || []).forEach((d) => {
+      existingMap[d.side] = d.url;
+    });
 
-    for (let i = 0; i < designImageFiles.length; i++) {
-      const url = await uploadToS3(
-        designImageFiles[i],
-        "products/design"
-      );
+    const finalDesignImages = [];
 
-      designImages.push({
-        url,
-        side: parsedDesignMeta[i]?.side,
-      });
+    for (const meta of parsedDesignMeta) {
+      const { side, action, url: existingUrl } = meta;
+
+      // 🔁 REPLACE
+      if (action === "replace") {
+        const file = designFilesBySide[side];
+        if (!file) {
+          return res.status(400).json(
+            new ApiResponse(400, `Missing design image for ${side}`)
+          );
+        }
+
+        const url = await uploadToS3(file, "products/design");
+        finalDesignImages.push({ side, url });
+      }
+
+      // ✅ KEEP
+      if (action === "keep") {
+        finalDesignImages.push({
+          side,
+          url: existingUrl || existingMap[side],
+        });
+      }
+
+      // ❌ REMOVE → do nothing
     }
 
-    product.desginImage = designImages;
+    // ✅ Validate FRONT still exists
+    if (!finalDesignImages.some((d) => d.side === "front")) {
+      return res.status(400).json(
+        new ApiResponse(400, "Front design image is mandatory")
+      );
+    }
+
+    product.desginImage = finalDesignImages;
   }
+
 
   /* ================= VARIANTS ================= */
   if (variants) {

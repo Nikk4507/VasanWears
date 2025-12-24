@@ -96,7 +96,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     // Google login users should not use password login
-    if (user.authType === "google") {
+    if (user.authType === "google" && !user.password) {
         return res
             .status(400)
             .json(new ApiResponse(400, "Please login using Google.", null));

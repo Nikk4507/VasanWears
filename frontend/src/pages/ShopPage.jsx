@@ -415,7 +415,7 @@ const ShopPage = () => {
                       oldPrice: product.variants?.[0]?.regularPrice
                         ? `₹${product.variants[0].regularPrice}`
                         : null,
-                      tags: ["Trendy", "Sale"],
+                      tags: product?.tags? product?.tags : [],
                       slug: product.slug
                     }}
                   />

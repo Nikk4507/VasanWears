@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema({
     phoneNumber: { type: String, trim: true },
     address: { type: String, trim: true },
     cartIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Cart" }],
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     wishListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "WishList" }],
 }, { timestamps: true });
 

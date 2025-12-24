@@ -88,7 +88,7 @@ const LoginPage = () => {
               <input type="checkbox" className="w-4 h-4 accent-black" />
               <span>Remember me</span>
             </label>
-            <Link to="/forgot" className="text-black font-medium">
+            <Link to="/forgot-password" className="text-black font-medium">
               Forgot password?
             </Link>
           </div>
