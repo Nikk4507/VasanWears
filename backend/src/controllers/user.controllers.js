@@ -9,7 +9,7 @@ const options = {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    // domain: process.env.DOMAIN_URL,
+
     path: "/",
 }
 const generateAccessAndRefreshToken = async (userId) => {
