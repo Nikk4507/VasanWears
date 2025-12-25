@@ -26,19 +26,20 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONT_END_URL}/reset-password/${resetToken}`;
 
-    const message = `
+    const message = `<p>
     You requested a password reset for Vasan Wears.
 
     Click the link below to reset your password:
     ${resetUrl}
 
     This link will expire in 15 minutes.
+    </p>
   `;
 
     await sendEmail({
         email: user.email,
         subject: "Vasan Wears - Password Reset",
-        message,
+        html: message,
     });
 
     res.json({ message: "Reset link sent to email" });

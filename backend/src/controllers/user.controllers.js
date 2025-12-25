@@ -29,7 +29,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 const registerUser = asyncHandler(async (req, res) => {
     const { fullName, email, password } = req.body;
-    console.log("Fullname", fullName);
+
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if ([fullName, email, password].some((field) => !field?.trim())) {
         return res
@@ -62,7 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
         password,
         avatar: imageUrl,
     });
-    // console.log("User ", user);
+
 
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
@@ -134,7 +134,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 const googleLogin = asyncHandler(async (req, res) => {
     const { access_token } = req.body;
-    console.log("Access Token ", access_token);
+
 
     if (!access_token) {
         return res
@@ -142,23 +142,17 @@ const googleLogin = asyncHandler(async (req, res) => {
             .json(new ApiResponse(400, "Google ID token is required.", null));
     }
 
-    // 1️⃣ Verify the token using Google
-    // const ticket = await client.verifyIdToken({
-    //     idToken,
-    //     audience: process.env.GOOGLE_CLIENT_ID,
-    // });
-    // console.log("Ticket ", ticket);
+
     const googleRes = await axios.get(
         `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
     );
-    // const payload = ticket.getPayload();
-    // console.log("Payload ", payload);
+
 
     const { email, name, picture, sub: googleId } = googleRes.data;
 
     // 2️⃣ Check if user exists
     let user = await User.findOne({ email });
-    console.log("User existed ", user);
+
 
     // 3️⃣ If user does NOT exist → Register automatically
     if (!user) {
@@ -176,7 +170,6 @@ const googleLogin = asyncHandler(async (req, res) => {
             return res.status(500).json(new ApiResponse(500, "User creation failed", err.message));
         }
     }
-    console.log("Created User ", user);
 
     // 4️⃣ Generate tokens
     const { accessToken, refreshToken } =
@@ -228,7 +221,7 @@ const currentUser = asyncHandler(async (req, res) => {
             .status(400)
             .json(new ApiResponse(401, "User is not found.", null));
     }
-    const user = await User.findById(userId).select("-password -refreshToken");
+    const user = await User.findById(userId).select("-password -refreshToken").lean();
     return res
         .status(200)
         .json(new ApiResponse(200, "Current User Fetched Successfully", user));
@@ -283,7 +276,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     const accessToken = user.generateAccessToken();
-    console.log("Access token worked");
+
 
     return res
         .cookie("accessToken", accessToken, options)

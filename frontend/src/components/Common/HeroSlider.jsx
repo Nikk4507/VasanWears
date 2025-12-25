@@ -6,6 +6,12 @@ import { RiArrowLeftLongLine, RiArrowRightLongLine } from "@remixicon/react";
 
 const slides = [
   {
+    type: "video",
+    url: "/videos/VasanWears.mp4",
+    title: "FESTIVE COLLECTION",
+    button: "EXPLORE",
+  },
+  {
     type: "image",
     url: "./images/slider.jpg",
     title: "WEDDING STORIES",
@@ -22,12 +28,6 @@ const slides = [
     url: "./images/slider2.jpg",
     title: "NEW ARRIVALS",
     button: "SHOP NOW",
-  },
-  {
-    type: "video",
-    url: "/videos/VasanWears.mp4",
-    title: "FESTIVE COLLECTION",
-    button: "EXPLORE",
   },
   
 ];

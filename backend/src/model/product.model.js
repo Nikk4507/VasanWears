@@ -74,6 +74,7 @@ const productSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
     },
     colors: [
       {

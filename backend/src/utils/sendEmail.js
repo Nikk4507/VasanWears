@@ -1,21 +1,13 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const sendEmail = async ({ email, subject, message }) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: true, // true for 465
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  await transporter.sendMail({
-    from: `"Vasan Wears" <${process.env.EMAIL_USER}>`,
+const sendEmail = async ({ email, subject, html }) => {
+  const response = await resend.emails.send({
+    from: `Vasan Wears <${process.env.EMAIL_USER}>`,
     to: email,
     subject,
-    text: message,
+    html,
   });
 };
 

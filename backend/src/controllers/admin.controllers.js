@@ -111,7 +111,7 @@ const currentUser = asyncHandler(async (req, res) => {
             .status(400)
             .json(new ApiResponse(401, "User is not found.", null));
     }
-    const user = await User.findById(userId).select("-password -refreshToken");
+    const user = await User.findById(userId).select("-password -refreshToken").lean();
     return res
         .status(200)
         .json(new ApiResponse(200, "Current User Fetched Successfully", user));
@@ -154,7 +154,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     const accessToken = user.generateAccessToken();
-    console.log("Access token worked");
 
     return res
         .cookie("adminAccessToken", accessToken, options)

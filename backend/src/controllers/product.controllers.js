@@ -535,6 +535,7 @@ const getProductById = asyncHandler(async (req, res) => {
       path: "subCategory",
       select: "name", // ✅ only name
     })
+    .lean();
 
   if (!product) {
     return res
@@ -568,7 +569,8 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     .populate({
       path: "sizes",
       select: "name", // ✅ only name
-    });
+    })
+    .lean();
 
   if (!product) {
     return res
@@ -656,7 +658,8 @@ const getAllProducts = asyncHandler(async (req, res) => {
       path: "subCategory",
       select: "name", // ✅ only name
     })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   if (!products.length) {
     return res
@@ -678,7 +681,8 @@ const getAllProductsForWebsite = asyncHandler(async (req, res) => {
       path: "subCategory",
       select: "name", // ✅ only name
     })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   if (!products.length) {
     return res

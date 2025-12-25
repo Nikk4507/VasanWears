@@ -28,14 +28,14 @@ const createSize = asyncHandler(async (req, res) => {
 
 /* ================= GET ALL SIZES ================= */
 const getAllSizes = asyncHandler(async (req, res) => {
-    const sizes = await Size.find().sort({ createdAt: -1 });
+    const sizes = await Size.find().sort({ createdAt: -1 }).lean();
 
     res
         .status(200)
         .json(new ApiResponse(200, "Sizes fetched successfully", sizes));
 });
 const getAllSizesWebsite = asyncHandler(async (req, res) => {
-    const sizes = await Size.find({ published: true }).sort({ createdAt: -1 }).select('name');
+    const sizes = await Size.find({ published: true }).sort({ createdAt: -1 }).select('name').lean();
 
     res
         .status(200)

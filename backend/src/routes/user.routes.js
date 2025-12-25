@@ -15,14 +15,20 @@ router.route("/user-profile/:id").get(verifyJwt, userProfile)
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.get("/test-email", async (req, res) => {
-  await sendEmail({
-    email: "imsgr10@gmail.com",
-    subject: "Test Email - Vasan Wears",
-    message: "GoDaddy email SMTP working 🚀",
-  });
+  try {
+    await sendEmail({
+      email: "imsgr10@gmail.com",
+      subject: "Test Email - Vasan Wears",
+      html: "<h1>Email working 🚀</h1><p>Resend is configured correctly.</p>",
+    });
 
-  res.send("Email sent");
+    res.send("Email sent successfully");
+  } catch (error) {
+    console.error("Email error:", error);
+    res.status(500).send(error.message);
+  }
 });
+
 
 
 export default router

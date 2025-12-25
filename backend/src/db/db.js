@@ -1,15 +1,27 @@
-import mongoose from "mongoose"
-import dbName from "../constans.js"
+import mongoose from "mongoose";
+import dbName from "../constans.js";
+
+let isConnected = false;
+
 const connectDb = async () => {
     try {
-        const connect = await mongoose.connect(process.env.MONGODB_URL, {
-            dbName: dbName,
-        })
-        console.log("Mongo db connected ", connect.connection.host);
+        if (isConnected) {
+            return;
+        }
 
+        const connection = await mongoose.connect(process.env.MONGODB_URL, {
+            dbName,
+            maxPoolSize: 10,       // connection pooling
+            serverSelectionTimeoutMS: 5000,
+        });
+
+        isConnected = connection.connections[0].readyState === 1;
+
+        console.log("MongoDB connected:", connection.connection.host);
     } catch (error) {
-        console.log("Mongo db connection error", error);
+        console.error("MongoDB connection error:", error);
         process.exit(1);
     }
-}
+};
+
 export default connectDb;

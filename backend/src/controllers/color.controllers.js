@@ -28,14 +28,14 @@ const createColor = asyncHandler(async (req, res) => {
 
 /* ================= GET ALL COLORS ================= */
 const getAllColors = asyncHandler(async (req, res) => {
-    const colors = await Color.find().sort({ createdAt: -1 });
+    const colors = await Color.find().sort({ createdAt: -1 }).lean();
 
     res
         .status(200)
         .json(new ApiResponse(200, "Colors fetched successfully", colors));
 });
 const getAllColorsWebsite = asyncHandler(async (req, res) => {
-    const colors = await Color.find({ published: true }).sort({ createdAt: -1 }).select('name hexCode');
+    const colors = await Color.find({ published: true }).sort({ createdAt: -1 }).select('name hexCode').lean();
 
     res
         .status(200)
