@@ -4,84 +4,11 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import noCart from "../../assets/images/no-cart.gif";
 import { Link } from "react-router-dom";
-
+import { useCartStore } from "../../store/cartStore";
 const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
   const drawerRef = useRef(null);
   const timeline = useRef(null);
-
-  // const cartItems = "";
-  const cartItems = [
-    {
-      id: "p1",
-      name: "Classic Cotton T-Shirt",
-      price: 499,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "M",
-      color: "Black",
-    },
-    {
-      id: "p5",
-      name: "Premium Oversized Hoodie",
-      price: 1299,
-      quantity: 2,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "L",
-      color: "Beige",
-    },
-    {
-      id: "p6",
-      name: "Denim Jacket",
-      price: 1799,
-      quantity: 1,
-      image:
-        "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-      size: "XL",
-      color: "Blue",
-    },
-    // {
-    //   id: "p7",
-    //   name: "Denim Jacket",
-    //   price: 1799,
-    //   quantity: 1,
-    //   image:
-    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-    //   size: "XL",
-    //   color: "Blue",
-    // },
-    // {
-    //   id: "p8",
-    //   name: "Denim Jacket",
-    //   price: 1799,
-    //   quantity: 1,
-    //   image:
-    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-    //   size: "XL",
-    //   color: "Blue",
-    // },
-    // {
-    //   id: "p9",
-    //   name: "Denim Jacket",
-    //   price: 1799,
-    //   quantity: 1,
-    //   image:
-    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-    //   size: "XL",
-    //   color: "Blue",
-    // },
-    // {
-    //   id: "p10",
-    //   name: "Denim Jacket",
-    //   price: 1000,
-    //   quantity: 1,
-    //   image:
-    //     "https://teespace.harutheme.com/studio/wp-content/uploads/sites/3/2022/10/1-1-330x440.jpg",
-    //   size: "XL",
-    //   color: "Blue",
-    // },
-  ];
+  const { items, subtotal, loading } = useCartStore();
 
   useGSAP(() => {
     timeline.current = gsap.timeline({ paused: true });
@@ -95,7 +22,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
         ease: "power3.out",
       }
     );
-    if (cartItems.length === 0) {
+    if (items?.length === 0) {
       timeline.current.from(
         ".no-cart img",
         {
@@ -162,22 +89,30 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
           </button>
         </div>
         <div className="md:h-[80vh] h-[60vh] overflow-x-hidden overflow-y-auto custom-scroll">
-          {cartItems ? (
+          {loading ? (
+            <p className="text-center">Loading cart...</p>
+          ) : items.length !== 0 ? (
             <div className="p-4 flex flex-col gap-4 ">
-              {cartItems.map((item) => (
+              {items?.map((item) => (
                 <div
-                  key={item.id}
+                  key={item._id}
                   className="border-b border-slate-300/70 py-4 flex gap-4 relative cartCont"
                 >
                   <div className="cartImage">
-                    <img src={item.image} alt="" className="w-20" />
+                    <img
+                      src={item.variant?.featuredImage}
+                      alt={item.product?.title}
+                      className="w-20"
+                    />
                   </div>
                   <div className="content flex flex-col">
                     <h5 className="text-sm font-bold md:font-medium md:text-lg">
-                      {item.name}
+                      {item.product?.title}
                     </h5>
-                    <span className="text-sm">Color: {item.color}</span>
-                    <span className="text-sm">Size: {item.size}</span>
+                    <span className="text-sm">Color: {item.color?.name}</span>
+
+                    <span className="text-sm">Size: {item.size?.name}</span>
+
                     <span className="text-sm font-bold text-primary5">
                       Price: {item.price}
                     </span>
@@ -214,20 +149,28 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
             </div>
           )}
         </div>
-        {cartItems.length > 0 && (
+        {items?.length > 0 && (
           <div className="p-4 flex flex-col gap-2 border-t border-slate-200/50">
             <div className="flex justify-between items-center py-2 ">
               <span className="text-lg font-medium">Subtotal:</span>
               <span className="text-primary5 font-bold text-xl">
-                ₹5999
+                ₹{subtotal}
               </span>{" "}
             </div>
-            <Link to="/cart" className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary3 
-             transition-all duration-300 btn-slide2 md:text-base text-sm cursor-pointer text-center" onClick={() => setCartDrawer(false)}>
+            <Link
+              to="/cart"
+              className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary3 
+             transition-all duration-300 btn-slide2 md:text-base text-sm cursor-pointer text-center"
+              onClick={() => setCartDrawer(false)}
+            >
               View Cart
             </Link>
-            <Link to="/checkout" className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary2 
-             transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer text-center" onClick={() => setCartDrawer(false)}>
+            <Link
+              to="/checkout"
+              className="w-full py-2.5 px-8 rounded-xl font-semibold text-primary2 
+             transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer text-center"
+              onClick={() => setCartDrawer(false)}
+            >
               Checkout
             </Link>
           </div>

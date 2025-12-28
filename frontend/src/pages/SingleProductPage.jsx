@@ -7,14 +7,17 @@ import {
   RiHeartLine,
 } from "@remixicon/react";
 import React, { useState, useRef, useEffect, useMemo } from "react";
-
 import { Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import gsap from "gsap";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+
 import { getProductBySlugApi } from "../utils/productApi";
 import Loader from "../components/Common/Loader";
 import { toggleWishlistApi, getWishlistApi } from "../utils/wishlistApi";
+import { useNavigate } from "react-router-dom";
+import { addToCartApi } from "../utils/cartApi";
+import toast from "react-hot-toast";
 const serviceablePincodes = {
   110001: "2–4 Days",
   400001: "3–5 Days",
@@ -30,62 +33,45 @@ const SIZE_ORDER = {
   XXL: 6,
   XXXL: 7,
 };
-
 const SingleProductPage = () => {
-  const { slug } = useParams();
+  const { id, slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const variantFromUrl = searchParams.get("variant");
+  const sizeFromUrl = searchParams.get("size");
+  const navigate = useNavigate();
   const [wishlistProductIds, setWishlistProductIds] = useState([]);
-  const [wishlistVariantIds, setWishlistVariantIds] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
-
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [cartCount, setCartCount] = useState(1);
   const [pincode, setPincode] = useState("");
   const [deliveryStatus, setDeliveryStatus] = useState(null);
   const [activeTab, setActiveTab] = useState("description");
+  const fetchCart = useCartStore((s) => s.fetchCart);
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
         const res = await getWishlistApi();
         setWishlistProductIds(res.data.productIds || []);
-      } catch (err) {}
+      } catch (err) {
+        if (err.response?.status !== 401) {
+          console.error(err);
+        }
+      }
     };
-
     fetchWishlist();
   }, []);
-
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         const res = await getProductBySlugApi(slug);
-        const data = res.data;
-        console.log("Product ", data);
 
-        setProduct(data);
-
-        // ✅ DEFAULT COLOR + VARIANT
-        const defaultColor = data.colors[0]?._id || null;
-        const defaultSize = data.sizes[0]?._id || null;
-
-        setSelectedColor(defaultColor);
-        setSelectedSize(defaultSize);
-
-        // pick variant based on color
-        const matchedVariant =
-          data.variants.find((v) => v.color === defaultColor) ||
-          data.variants[0];
-
-        setSelectedVariant(matchedVariant);
-
-        // ✅ DEFAULT SIZE
-        setSelectedSize(data.sizes?.[0]?._id || null);
+        setProduct(res.data);
       } catch (err) {
         console.error("Single product error", err);
       } finally {
@@ -95,6 +81,39 @@ const SingleProductPage = () => {
 
     fetchProduct();
   }, [slug]);
+  useEffect(() => {
+    if (!product) return;
+
+    /* ========= VARIANT (COLOR) ========= */
+    let finalVariant = product.variants[0];
+
+    if (variantFromUrl) {
+      const foundVariant = product.variants.find(
+        (v) => v._id === variantFromUrl
+      );
+      if (foundVariant) {
+        finalVariant = foundVariant;
+      }
+    }
+
+    setSelectedVariant(finalVariant);
+    setSelectedColor(finalVariant.color);
+
+    /* ========= SIZE (INDEPENDENT) ========= */
+    let finalSize = product.sizes?.[0]?._id || null;
+
+    if (sizeFromUrl) {
+      const foundSize = product.sizes.find((s) => s._id === sizeFromUrl);
+      if (foundSize) {
+        finalSize = foundSize._id;
+      }
+    }
+
+    setSelectedSize(finalSize);
+
+    setSelectedIndex(0);
+  }, [product, variantFromUrl, sizeFromUrl]);
+
   const isWishlisted = wishlistProductIds.includes(product?._id);
 
   const handleToggleWishlist = async () => {
@@ -109,7 +128,13 @@ const SingleProductPage = () => {
 
       setWishlistProductIds(updatedIds);
     } catch (err) {
-      console.error(err);
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { from: `/product/${slug}` }, // optional redirect back
+        });
+      } else {
+        console.error("Wishlist error:", err);
+      }
     } finally {
       setWishlistLoading(false);
     }
@@ -158,7 +183,6 @@ const SingleProductPage = () => {
 
   const selectedMedia = media[selectedIndex];
 
-  const addToCart = useCartStore((state) => state.addToCart);
   const checkPincode = () => {
     if (serviceablePincodes[pincode]) {
       setDeliveryStatus({
@@ -172,17 +196,29 @@ const SingleProductPage = () => {
     }
   };
   const handleColorChange = (colorId) => {
+    const variant = product.variants.find((v) => v.color === colorId);
+
+    if (!variant) return;
+
+    setSelectedVariant(variant);
     setSelectedColor(colorId);
-
-    const matchedVariant =
-      product.variants.find((v) => v.color === colorId) || product.variants[0]; // fallback
-
-    setSelectedVariant(matchedVariant);
     setSelectedIndex(0);
+
+    // 🔗 Update URL (KEEP SIZE)
+    navigate(
+      `/shop/${product._id}/${product.slug}?variant=${variant._id}&size=${selectedSize}`,
+      { replace: true }
+    );
   };
 
   const handleSizeChange = (sizeId) => {
     setSelectedSize(sizeId);
+
+    // 🔗 Update URL (KEEP VARIANT)
+    navigate(
+      `/shop/${product._id}/${product.slug}?variant=${selectedVariant._id}&size=${sizeId}`,
+      { replace: true }
+    );
   };
 
   const [showVideo, setShowVideo] = useState(false);
@@ -232,6 +268,34 @@ const SingleProductPage = () => {
       },
     });
   };
+  const handleAddToCart = async () => {
+    if (!selectedColor || !selectedSize) {
+      toast.error("Please select color and size");
+      return;
+    }
+
+    try {
+      toast.loading("Adding to cart...");
+      await addToCartApi({
+        productId: product._id,
+        colorId: selectedColor,
+        sizeId: selectedSize,
+        quantity: cartCount,
+      });
+      toast.dismiss();
+      await fetchCart(); // 🔥 REAL-TIME UPDATE
+      toast.success("Added to cart");
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { from: location.pathname + location.search },
+        });
+      } else {
+        toast.error(err.response?.data?.message || "Add to cart failed");
+      }
+    }
+  };
+
   const [reviews, setReviews] = useState([]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewData, setReviewData] = useState({
@@ -413,9 +477,9 @@ const SingleProductPage = () => {
               {product.description}
             </p>
             <p className="text-xl font-bold text-primary5 mb-4">
-              ₹{selectedVariant.salePrice}
+              ₹{selectedVariant?.salePrice}
               <del className="ml-2 text-gray-400">
-                ₹{selectedVariant.regularPrice}
+                ₹{selectedVariant?.regularPrice}
               </del>
             </p>
 
@@ -487,18 +551,8 @@ const SingleProductPage = () => {
               {/* Add To Cart */}
               <button
                 className="py-2.5 px-8 rounded-xl font-semibold text-primary2 
-             transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer"
-                onClick={() =>
-                  addToCart({
-                    id: product._id,
-                    title: product.title,
-                    price: selectedVariant.salePrice,
-                    color: selectedColor, // outer color
-                    size: selectedSize, // outer size
-                    quantity: cartCount,
-                    image: selectedVariant.featuredImage,
-                  })
-                }
+  transition-all duration-300 btn-slide md:text-base text-sm cursor-pointer"
+                onClick={handleAddToCart}
               >
                 Add To Cart
               </button>

@@ -10,10 +10,13 @@ import {
 // ... (imports remain the same)
 import Banner from "../components/Common/Banner";
 import CustomSortDropdown from "../components/Common/CustomSortDropdown";
-import slugify from "../utils/Slug";
+import { toggleWishlistApi, getWishlistApi } from "../utils/wishlistApi";
+import toast from "react-hot-toast";
+
 import {
   RiArrowDownSLine,
   RiArrowUpSLine,
+  RiHeartFill,
   RiHeartLine,
   RiSearch2Line,
   RiShoppingBagLine,
@@ -26,12 +29,32 @@ import Loader from "../components/Common/Loader";
 const ShopPage = () => {
   // --- MAIN FILTER STATE (Applied to finalProducts) ---
   const productsGridRef = useRef(null);
+  const [wishlistProductIds, setWishlistProductIds] = useState([]);
+  const [wishlistLoadingId, setWishlistLoadingId] = useState(null);
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const res = await getWishlistApi();
+        setWishlistProductIds(res.data.productIds || []);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          navigate("/login", {
+            state: { from: `/product/${slug}` }, // optional redirect back
+          });
+        } else {
+          console.error("Wishlist error:", err);
+        }
+      }
+    };
+
+    fetchWishlist();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -264,6 +287,35 @@ const ShopPage = () => {
 
     return () => clearTimeout(delay);
   }, [searchInput]);
+  const handleToggleWishlist = async (productId) => {
+    if (wishlistLoadingId) return;
+
+    try {
+      setWishlistLoadingId(productId);
+
+      const res = await toggleWishlistApi(productId);
+
+      const updatedIds = res.data.items.map((i) => i.product.toString());
+      setWishlistProductIds(updatedIds);
+
+      toast.success(
+        updatedIds.includes(productId)
+          ? "Added to wishlist"
+          : "Removed from wishlist"
+      );
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { from: location.pathname },
+        });
+      } else {
+        toast.error("Wishlist action failed");
+      }
+    } finally {
+      setWishlistLoadingId(null);
+    }
+  };
+
   if (loading) {
     return <Loader />;
   }
@@ -415,9 +467,12 @@ const ShopPage = () => {
                       oldPrice: product.variants?.[0]?.regularPrice
                         ? `₹${product.variants[0].regularPrice}`
                         : null,
-                      tags: product?.tags? product?.tags : [],
-                      slug: product.slug
+                      tags: product?.tags ? product?.tags : [],
+                      slug: product.slug,
                     }}
+                    isWishlisted={wishlistProductIds.includes(product._id)}
+                    onToggleWishlist={() => handleToggleWishlist(product._id)}
+                    loading={wishlistLoadingId === product._id}
                   />
                 ))
               )}
@@ -646,7 +701,7 @@ const Accordion = ({ title, children }) => {
   );
 };
 
-const ProductCard = ({ data }) => {
+const ProductCard = ({ data, isWishlisted, onToggleWishlist, loading }) => {
   const imgRef = useRef(null);
   const hoverImgRef = useRef(null);
   const sideIconRef = useRef(null);
@@ -724,14 +779,24 @@ const ProductCard = ({ data }) => {
             className="absolute right-3 top-1/4 -translate-y-1/2 flex flex-col gap-3 opacity-0"
             ref={sideIconRef}
           >
-            {[RiHeartLine, RiShoppingBagLine].map((Icon, i) => (
-              <div
-                key={i}
-                className={`cursor-pointer translate-y-2 w-7 h-7 md:w-10 md:h-10 bg-white shadow-md rounded-full flex items-center justify-center hover:bg-primary1 hover:text-white transition-all}`}
-              >
-                <Icon size={18} />
-              </div>
-            ))}
+            <div
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleWishlist();
+              }}
+              className="cursor-pointer translate-y-2 w-7 h-7 md:w-10 md:h-10 
+             bg-white shadow-md rounded-full flex items-center justify-center 
+             hover:bg-primary5 transition-all hover:text-white text-primary5"
+            >
+              {loading ? (
+                <span className="w-4 h-4 border-2 border-primary5 border-t-transparent rounded-full animate-spin" />
+              ) : isWishlisted ? (
+                <RiHeartFill className="  " size={18} />
+              ) : (
+                <RiHeartLine className="" size={18} />
+              )}
+            </div>
           </div>
         </div>
 

@@ -13,18 +13,26 @@ export const getCartApi = async () => {
     }
 };
 
-export const addToCartApi = async (productId, variantId, quantity) => {
+export const addToCartApi = async ({
+    productId,
+    colorId,
+    sizeId,
+    quantity,
+}) => {
     try {
         const res = await API.post("/cart/add", {
             productId,
-            variantId,
+            colorId,
+            sizeId,
             quantity,
         });
+
         return res.data;
     } catch (err) {
         throw err;
     }
 };
+
 export const removeFromCartApi = async (itemId) => {
     try {
         const res = await API.delete(`/cart/remove/${itemId}`);

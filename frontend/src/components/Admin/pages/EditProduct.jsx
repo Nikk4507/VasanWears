@@ -152,12 +152,7 @@ const EditProduct = () => {
   };
 
   /* ================= SUBMIT ================= */
-  const [designImages, setDesignImages] = useState({
-    front: null,
-    back: null,
-    left: null,
-    right: null,
-  });
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -165,14 +160,7 @@ const EditProduct = () => {
       toast.error("Required fields are missing");
       return;
     }
-    if (
-      !designImages.front ||
-      (typeof designImages.front !== "string" &&
-        !(designImages.front instanceof File))
-    ) {
-      toast.error("Front design image is mandatory");
-      return;
-    }
+    
 
     try {
       setLoading(true);
@@ -182,31 +170,7 @@ const EditProduct = () => {
       }
 
       const formData = new FormData();
-      const designMeta = [];
 
-      Object.entries(designImages).forEach(([side, value]) => {
-        // Case 1: New file uploaded
-        if (value instanceof File) {
-          formData.append(`designImages_${side}`, value);
-          designMeta.push({ side, action: "replace" });
-        }
-
-        // Case 2: Existing image (URL or object)
-        else if (value === null) {
-          designMeta.push({
-            side,
-            action: "remove",
-          });
-        } else if (typeof value === "string" || value?.url) {
-          designMeta.push({
-            side,
-            action: "keep",
-            url: value.url || value,
-          });
-        }
-      });
-
-      formData.append("designImagesMeta", JSON.stringify(designMeta));
 
       // TEXT FIELDS
       formData.append("title", form.title);
@@ -344,19 +308,7 @@ const EditProduct = () => {
     toast.success("Attributes saved");
   };
 
-  const handleDesignImageChange = (side, file) => {
-    setDesignImages((prev) => ({
-      ...prev,
-      [side]: file,
-    }));
-  };
-
-  const removeDesignImage = (side) => {
-    setDesignImages((prev) => ({
-      ...prev,
-      [side]: null,
-    }));
-  };
+  
   const allColorIds = availableColors.map((c) => c._id);
   const allSizeIds = availableSizes.map((s) => s._id);
   const fetchProduct = async () => {
@@ -407,17 +359,8 @@ const EditProduct = () => {
       setProductId(p._id || null);
 
       // populate design images (backend uses `desginImage` field)
-      const designMap = { front: null, back: null, left: null, right: null };
+      
 
-      const designArr = p.desginImage || p.designImage || p.designImages || [];
-
-      designArr.forEach((d) => {
-        if (d?.side && d?.url) {
-          designMap[d.side] = d.url;
-        }
-      });
-
-      setDesignImages(designMap);
 
       setAttributeSaved(true);
     } catch (err) {
@@ -544,48 +487,7 @@ const EditProduct = () => {
           </div>
         </div>
         {/* DESIGN IMAGES */}
-        <div className="border p-4 rounded space-y-3">
-          <h2 className="font-semibold">Design Images</h2>
-          <p className="text-xs text-gray-500">
-            Upload design images for each side (Front is mandatory)
-          </p>
-
-          <div className="grid grid-cols-2 gap-4">
-            {["front", "back", "left", "right"].map((side) => (
-              <div
-                key={side}
-                className="border rounded p-3 flex flex-col gap-2"
-              >
-                <p className="text-sm font-medium capitalize">
-                  {side} {side === "front" && "(Required)"}
-                </p>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleDesignImageChange(side, e.target.files[0])
-                  }
-                />
-
-                {designImages[side] && (
-                  <div className="relative w-24 h-24">
-                    <div className="w-24 h-24 overflow-hidden rounded">
-                      {renderPreview(designImages[side])}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeDesignImage(side)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        
 
         {/* VARIANTS */}
         <div className="border p-4 rounded space-y-3">

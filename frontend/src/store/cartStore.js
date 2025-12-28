@@ -1,34 +1,38 @@
 import { create } from "zustand";
+import { getCartApi } from "../utils/cartApi";
 
 export const useCartStore = create((set) => ({
-  cart: [],
+  items: [],
+  subtotal: 0,
+  totalQty: 0,
+  loading: false,
 
-  addToCart: (product) =>
-    set((state) => {
-      const existing = state.cart.find((item) => item.id === product.id && item.size === product.size);
+  fetchCart: async () => {
+    set({ loading: true });
+    try {
+      const res = await getCartApi();
+      const cart = res.data;
 
-      if (existing) {
-        return {
-          cart: state.cart.map((item) =>
-            item.id === product.id && item.size === product.size
-              ? { ...item, quantity: item.quantity + product.quantity }
-              : item
-          ),
-        };
-      }
+      const totalQty = cart.items.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      );
 
-      return { cart: [...state.cart, product] };
+      set({
+        items: cart.items,
+        subtotal: cart.subtotal,
+        totalQty,
+        loading: false,
+      });
+    } catch (err) {
+      set({ loading: false });
+    }
+  },
+
+  clearLocalCart: () =>
+    set({
+      items: [],
+      subtotal: 0,
+      totalQty: 0,
     }),
-
-  removeFromCart: (id) =>
-    set((state) => ({
-      cart: state.cart.filter((item) => item.id !== id),
-    })),
-
-  updateQuantity: (id, qty) =>
-    set((state) => ({
-      cart: state.cart.map((item) =>
-        item.id === id ? { ...item, quantity: qty } : item
-      ),
-    })),
 }));

@@ -135,22 +135,12 @@ const AddProduct = () => {
   };
 
   /* ================= SUBMIT ================= */
-  const [designImages, setDesignImages] = useState({
-    front: null,
-    back: null,
-    left: null,
-    right: null,
-  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.title || !form.slug) {
       toast.error("Required fields are missing");
-      return;
-    }
-    if (!designImages.front) {
-      toast.error("Front design image is mandatory");
-      setLoading(false);
       return;
     }
 
@@ -163,16 +153,8 @@ const AddProduct = () => {
       }
 
       const formData = new FormData();
-      const designMeta = [];
 
-      Object.entries(designImages).forEach(([side, file]) => {
-        if (file) {
-          formData.append("designImages", file);
-          designMeta.push({ side });
-        }
-      });
-
-      formData.append("designImagesMeta", JSON.stringify(designMeta));
+      // formData.append("designImagesMeta", JSON.stringify(designMeta));
 
       // TEXT FIELDS
       formData.append("title", form.title);
@@ -373,50 +355,6 @@ const AddProduct = () => {
           </div>
         </div>
         {/* DESIGN IMAGES */}
-        <div className="border p-4 rounded space-y-3">
-          <h2 className="font-semibold">Design Images</h2>
-          <p className="text-xs text-gray-500">
-            Upload design images for each side (Front is mandatory)
-          </p>
-
-          <div className="grid grid-cols-2 gap-4">
-            {["front", "back", "left", "right"].map((side) => (
-              <div
-                key={side}
-                className="border rounded p-3 flex flex-col gap-2"
-              >
-                <p className="text-sm font-medium capitalize">
-                  {side} {side === "front" && "(Required)"}
-                </p>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleDesignImageChange(side, e.target.files[0])
-                  }
-                />
-
-                {designImages[side] && (
-                  <div className="relative w-24 h-24">
-                    <img
-                      src={URL.createObjectURL(designImages[side])}
-                      alt={side}
-                      className="w-24 h-24 object-cover rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeDesignImage(side)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* VARIANTS */}
         <div className="border p-4 rounded space-y-3">

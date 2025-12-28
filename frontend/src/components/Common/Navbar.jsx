@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/images/VasanWears.png";
 import default_female_avatar from "../../../public/images/female_default_avatar.png";
@@ -21,9 +21,12 @@ import { useAuthStore } from "../../store/useAuthStore";
 const Navbar = ({ searchModel, setSearchModel }) => {
   const [cartDrawer, setCartDrawer] = useState(false);
   const mobileMenuTimeline = useRef(null);
-  const cart = useCartStore((state) => state.cart);
-  const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
   const user = useAuthStore((state) => state.user);
+  const totalQty = useCartStore((s) => s.totalQty);
+  const fetchCart = useCartStore((s) => s.fetchCart);
+  useEffect(() => {
+    fetchCart(); // load cart on app start
+  }, []);
   useGSAP(() => {
     var t1 = gsap.timeline();
 

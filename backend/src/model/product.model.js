@@ -114,18 +114,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    desginImage: [
-      {
-        url: {
-          type: String,
-        },
-        side: {
-          type: String,
-          enum: ["front", "back", "left", "right"],
-          required: true,
-        },
-      },
-    ],
+    
 
     gallery: [
       {
