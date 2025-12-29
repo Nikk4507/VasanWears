@@ -1,12 +1,67 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import html2canvas from "html2canvas";
+import JSZip from "jszip";
+import { gsap } from "gsap";
 
 const SIDE_CONFIG = {
   front: { key: "Front", label: "Front", bgImage: "/Black/Front.jpg" },
   back: { key: "Back", label: "Back", bgImage: "/Black/Back.jpg" },
   // left: { key: "left", label: "Left", bgImage: "/Black/left.png" },
   // right: { key: "right", label: "Right", bgImage: "/Black/right.png" },
+};
+
+const CLOTH_CONFIG = {
+  men: {
+    label: "Men T-Shirt",
+    imageFolderForColor: (colorName) => String(colorName || "Black"),
+    printAreaInch: { width: 16, height: 20 },
+    // placement is normalized to the Fabric canvas size
+    placementBySide: {
+      Front: { x: 0.5, y: 0.52 },
+      Back: { x: 0.5, y: 0.52 },
+    },
+    margin: 0.4,
+  },
+  women: {
+    label: "Women T-Shirt",
+    // You currently have /public/Girl/Front.jpg + Back.jpg
+    imageFolderForColor: () => "Girl",
+    printAreaInch: { width: 14, height: 18 },
+    placementBySide: {
+      Front: { x: 0.5, y: 0.55 },
+      Back: { x: 0.5, y: 0.55 },
+    },
+    margin: 0.3,
+  },
+  hoodie: {
+    label: "Hoodie",
+    imageFolderForColor: (colorName) => String(colorName || "Black"),
+    printAreaInch: { width: 14, height: 16 },
+    placementBySide: {
+      Front: { x: 0.5, y: 0.54 },
+      Back: { x: 0.5, y: 0.54 },
+    },
+    margin: 0.3,
+  },
+  sweatshirt: {
+    label: "Sweatshirt",
+    imageFolderForColor: (colorName) => String(colorName || "Black"),
+    printAreaInch: { width: 14, height: 18 },
+    placementBySide: {
+      Front: { x: 0.5, y: 0.53 },
+      Back: { x: 0.5, y: 0.53 },
+    },
+    margin: 0.3,
+  },
+};
+
+const getBgUrlFor = ({ clothKey, colorName, sideKey }) => {
+  const cKey = String(clothKey || "men");
+  const cfg = CLOTH_CONFIG[cKey] || CLOTH_CONFIG.men;
+  const folder = (cfg.imageFolderForColor && cfg.imageFolderForColor(colorName)) || String(colorName || "Black");
+  const sKey = String(sideKey || "Front");
+  return `${folder}/${sKey}.jpg`;
 };
 
 const AVAILABLE_COLORS = [
@@ -20,13 +75,14 @@ const AVAILABLE_COLORS = [
 ];
 
 const Designer = () => {
-  
   const fabricCanvasRef = useRef(null);
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const stageRef = useRef(null);
   const CliprectRef = useRef(null);
   const initialClipRef = useRef(null);
   const clipStackRef = useRef([]);
+  const sideSwitchTokenRef = useRef(0);
   const baseSizeRef = useRef({ width: 1800, height: 1200 });
   const textInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -36,78 +92,98 @@ const Designer = () => {
   const [fontFamily, setFontFamily] = useState("Arial");
   const [mockMode, setMockMode] = useState(false);
   const mockImageRef = useRef(null);
-  const mockClipRef = useRef(null);
   const [currentSide, setCurrentSide] = useState("Front");
-  const [sideDesigns, setSideDesigns] = useState({
-    front: {
-      Black: null,
-      White: null,
-      NavyBlue: null,
-      Red: null,
-      RoyalBlue: null,
-      Grey: null,
-      OliveGreen: null,
-    },
-    back: {
-      Black: null,
-      White: null,
-      NavyBlue: null,
-      Red: null,
-      RoyalBlue: null,
-      Grey: null,
-      OliveGreen: null,
-    },
-    // left: {
-    //   Black: null,
-    //   White: null,
-    //   NavyBlue: null,
-    //   Red: null,
-    //   RoyalBlue: null,
-    //   Grey: null,
-    //   OliveGreen: null,
-    // },
-    // right: {
-    //   Black: null,
-    //   White: null,
-    //   NavyBlue: null,
-    //   Red: null,
-    //   RoyalBlue: null,
-    //   Grey: null,
-    //   OliveGreen: null,
-    // },
+  const [cloth, setCloth] = useState("men");
+  const [designStore, setDesignStore] = useState({
+    men: { front: null, back: null },
+    women: { front: null, back: null },
+    hoodie: { front: null, back: null },
+    sweatshirt: { front: null, back: null },
   });
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewImages, setPreviewImages] = useState({ Front: null, Back: null });
+  const previewTokenRef = useRef(0);
+
+  const [hoveredColorName, setHoveredColorName] = useState(null);
 
   const [selectedColor, setSelectedColor] = useState("Black");
-  const [imageUrl, setImageUrl] = useState("Black/Front.jpg");
-  const sideDesignsRef = useRef(null);
+  const [imageUrl, setImageUrl] = useState(() =>
+    getBgUrlFor({ clothKey: "men", colorName: "Black", sideKey: "Front" })
+  );
 
-  const containerBoxRef = useRef(null);
-const [box, setBox] = useState({ width: 0, height: 0 });
+  const handleClothChange = async (nextClothKey) => {
+    if (mockMode) return;
 
-useEffect(() => {
-  if (!containerBoxRef.current) return;
+    const newKey = String(nextClothKey || "");
+    if (!newKey || !CLOTH_CONFIG[newKey]) return;
+    if (newKey === cloth) return;
 
-  const { width, height } = containerBoxRef.current.getBoundingClientRect();
+    // Persist current cloth+side before switching.
+    saveCurrentSideDesign();
 
-  setBox({
-    width: width * 0.35,
-    height: height * 0.45,
-  });
-}, []);
+    // Update UI state.
+    setCloth(newKey);
+
+    // Rebuild canvas for the same side using the new cloth config.
+    await handleSideChange(currentSide, { clothKey: newKey, skipSave: true });
+  };
+
+  const designStoreRef = useRef(null);
+
+  const PRINT_DPI = 96;
 
   useEffect(() => {
-    sideDesignsRef.current = sideDesigns;
-  }, [sideDesigns]);
+    designStoreRef.current = designStore;
+  }, [designStore]);
+
+  const tweenTo = (el, vars) => {
+    if (!el) return;
+    try {
+      gsap.killTweensOf(el);
+      gsap.to(el, { duration: 0.18, ease: "power2.out", ...vars });
+    } catch (e) {}
+  };
 
   useEffect(() => {
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 80,
+      width: baseSizeRef.current.width,
       height: baseSizeRef.current.height,
       backgroundColor: null,
       preserveObjectStacking: true,
     });
 
     fabricCanvasRef.current = canvas;
+
+    // On mobile browsers, touch drags on the canvas can be interpreted as page/container
+    // scrolling (rubber-band / pull-to-refresh). Prevent default touch scrolling on the
+    // Fabric canvas elements so object drag/scale feels stable.
+    const touchOptions = { passive: false };
+    const preventTouchScroll = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+    };
+    const upperEl = canvas.upperCanvasEl;
+    const lowerEl = canvas.lowerCanvasEl;
+    try {
+      if (upperEl) {
+        upperEl.style.touchAction = "none";
+        upperEl.style.webkitUserSelect = "none";
+        upperEl.style.userSelect = "none";
+        upperEl.style.webkitTouchCallout = "none";
+        upperEl.addEventListener("touchstart", preventTouchScroll, touchOptions);
+        upperEl.addEventListener("touchmove", preventTouchScroll, touchOptions);
+      }
+      if (lowerEl) {
+        lowerEl.style.touchAction = "none";
+        lowerEl.style.webkitUserSelect = "none";
+        lowerEl.style.userSelect = "none";
+        lowerEl.style.webkitTouchCallout = "none";
+        lowerEl.addEventListener("touchstart", preventTouchScroll, touchOptions);
+        lowerEl.addEventListener("touchmove", preventTouchScroll, touchOptions);
+      }
+    } catch (e) {}
 
     // Modern way to load image
     const imgElement = new Image();
@@ -125,11 +201,16 @@ useEffect(() => {
         absolutePositioned: true,
       });
 
+      const { left, top, width, height } = getFittedPrintAreaRect(canvas, {
+        clothKey: cloth,
+        sideKey: currentSide,
+      });
+
       const Cliprect = new fabric.Rect({
-        top: containerRef.current.clientHeight / 2 + 40,
-        left: containerRef.current.clientWidth / 2 - 5,
-        height: 350,
-        width: 301,
+        left,
+        top,
+        width,
+        height,
         originX: "center",
         originY: "center",
         absolutePositioned: true,
@@ -138,11 +219,10 @@ useEffect(() => {
       });
 
       const clipBorder = new fabric.Rect({
-        top: containerRef.current.clientHeight / 2 + 43,
-        left: containerRef.current.clientWidth / 2 - 5,
-        height: 351,
-        width: 301,
-        absolutePositioned: true,
+        left,
+        top,
+        width,
+        height,
         originX: "center",
         originY: "center",
         fill: "transparent",
@@ -151,7 +231,20 @@ useEffect(() => {
         strokeDashArray: [5, 5],
         selectable: false,
         evented: false,
-        visible: false,
+      });
+
+      clipBorder.isClipBorder = true;
+      clipBorder.set({
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockScalingX: true,
+        lockScalingY: true,
+        lockRotation: true,
+        excludeFromExport: true,
       });
 
       CliprectRef.current = Cliprect;
@@ -199,6 +292,17 @@ useEffect(() => {
         canvas.off("selection:updated");
         canvas.off("selection:cleared");
       } catch (e) {}
+
+      try {
+        if (upperEl) {
+          upperEl.removeEventListener("touchstart", preventTouchScroll, touchOptions);
+          upperEl.removeEventListener("touchmove", preventTouchScroll, touchOptions);
+        }
+        if (lowerEl) {
+          lowerEl.removeEventListener("touchstart", preventTouchScroll, touchOptions);
+          lowerEl.removeEventListener("touchmove", preventTouchScroll, touchOptions);
+        }
+      } catch (e) {}
       canvas.dispose();
     };
   }, []);
@@ -211,14 +315,39 @@ useEffect(() => {
     const resize = () => {
       const container = containerRef.current;
       if (!container) return;
-      const maxWidth = container.clientWidth || baseSizeRef.current.width;
-      const factor = Math.min(1, maxWidth / baseSizeRef.current.width);
-      const newWidth = Math.round(baseSizeRef.current.width * factor);
-      const newHeight = Math.round(baseSizeRef.current.height * factor);
-      canvas.setWidth(newWidth);
-      canvas.setHeight(newHeight);
-      canvas.setZoom(factor);
-      canvas.requestRenderAll();
+
+      const baseW = baseSizeRef.current.width;
+      const baseH = baseSizeRef.current.height;
+
+      const containerWidth = container.clientWidth || baseW;
+      const fitScale = containerWidth / baseW;
+      const isMobile = (window.innerWidth || 0) <= 768;
+
+      // On phones, keep a minimum scale so the canvas is readable even if it overflows
+      // (user can scroll the container). On desktop, just fit to container.
+      const minMobileScale = 0.5;
+      const scale = Math.min(1, isMobile ? Math.max(fitScale, minMobileScale) : fitScale);
+
+      const cssW = Math.round(baseW * scale);
+      const cssH = Math.round(baseH * scale);
+
+      // Keep full internal resolution; only scale the DOM size.
+      try {
+        canvas.setDimensions({ width: baseW, height: baseH }, { backstoreOnly: true });
+        canvas.setDimensions({ width: cssW, height: cssH }, { cssOnly: true });
+        if (typeof canvas.calcOffset === "function") canvas.calcOffset();
+      } catch (e) {}
+
+      // Keep the shirt background aligned with the canvas by sizing the stage
+      // to the same CSS pixels as the canvas element.
+      try {
+        if (stageRef.current) {
+          stageRef.current.style.width = `${cssW}px`;
+          stageRef.current.style.height = `${cssH}px`;
+        }
+      } catch (e) {}
+
+      canvas.requestRenderAll && canvas.requestRenderAll();
     };
 
     resize();
@@ -248,10 +377,6 @@ useEffect(() => {
     );
   }
 
-  function colorKey(name) {
-    return String(name || "").replace(/\s+/g, "");
-  }
-
   function saveCurrentSideDesign() {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -259,112 +384,128 @@ useEffect(() => {
     canvas.discardActiveObject?.();
 
     const json = canvas.toJSON(["isMaskImage", "absolutePositioned"]);
-    const cKey = colorKey(selectedColor);
 
-    setSideDesigns((prev) => {
+    const cKey = String(cloth || "men");
+    const sKey = String(currentSide || "Front").toLowerCase();
+    setDesignStore((prev) => {
+      const prevCloth = prev && prev[cKey] ? prev[cKey] : { front: null, back: null };
       const updated = {
         ...prev,
-        [currentSide]: {
-          ...prev[currentSide],
-          [cKey]: json,
+        [cKey]: {
+          ...prevCloth,
+          [sKey]: json,
         },
       };
-      sideDesignsRef.current = updated;
-      return updated;
-    });
-  }
-
-  function syncAllSidesToNewColor(fromColor, toColor) {
-    const fromKey = colorKey(fromColor);
-    const toKey = colorKey(toColor);
-
-    setSideDesigns((prev) => {
-      const updated = { ...prev };
-
-      // ["front", "back", "left", "right"].forEach(side => {
-      ["front", "back"].forEach((side) => {
-        const source = prev?.[side]?.[fromKey];
-        const target = prev?.[side]?.[toKey];
-
-        // copy ONLY if target color is empty
-        if (!target && source) {
-          updated[side] = {
-            ...updated[side],
-            [toKey]: source,
-          };
-        }
-      });
-
-      sideDesignsRef.current = updated;
+      designStoreRef.current = updated;
       return updated;
     });
   }
 
   // --- Create a new base clip and border and add border to canvas ---
   // returns the clipRect
-  function createBaseClip(canvas) {
-    // compute clip position relative to container
-    const top = containerRef.current.clientHeight / 2 + 40;
-    const left = containerRef.current.clientWidth / 2 - 5;
+  function createBaseClip(canvas, opts = {}) {
+  if (!canvas) return null;
 
-    const clipRect = new fabric.Rect({
-      top,
-      left,
-      height: 350,
-      width: 301,
-      originX: "center",
-      originY: "center",
-      absolutePositioned: true,
-      selectable: false,
-      evented: false,
-    });
+  const clothKeyForClip = String(opts.clothKey || cloth || "men");
+  const sideKeyForClip = String(opts.sideKey || currentSide || "Front");
 
-    // keep refs and add the border (visible) to canvas
-    CliprectRef.current = clipRect;
-    initialClipRef.current = clipRect;
+  const { left, top, width, height } = getFittedPrintAreaRect(canvas, {
+    clothKey: clothKeyForClip,
+    sideKey: sideKeyForClip,
+  });
 
-    // Add border so user sees clip area. Ensure not duplicated.
-    try {
-      // remove any existing visible border (keep only one)
-      const canvasBorders = canvas
-        .getObjects()
-        .filter(
-          (o) => Array.isArray(o.strokeDashArray) && o.strokeDashArray.length
-        );
-      canvasBorders.forEach((b) => canvas.remove(b));
-    } catch (e) {}
 
-    return clipRect;
-  }
+
+  // 🔹 Invisible clipPath
+  const clipRect = new fabric.Rect({
+    left,
+    top,
+    width,
+    height,
+    originX: "center",
+    originY: "center",
+    absolutePositioned: true,
+    selectable: false,
+    evented: false,
+  });
+
+  // 🔹 Visible dashed border
+  const clipBorder = new fabric.Rect({
+    left,
+    top,
+    width,
+    height,
+    originX: "center",
+    originY: "center",
+    fill: "transparent",
+    stroke: "red",
+    strokeWidth: 2,
+    strokeDashArray: [5, 5],
+    visible: true,
+    selectable: false,
+    evented: false,
+  });
+
+  clipBorder.isClipBorder = true;
+
+  // 🔹 Add border to canvas
+  
+  // 🔥 FORCE LOCK
+  clipBorder.set({
+    selectable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    excludeFromExport: true,
+  });
+  clipBorder.setCoords();
+  canvas.add(clipBorder);
+  try {
+    canvas.bringObjectToFront(clipBorder);
+  } catch (e) {}
+  canvas.requestRenderAll();
+
+  // 🔹 Store refs
+  CliprectRef.current = clipRect;
+  initialClipRef.current = clipRect;
+
+
+  canvas.requestRenderAll();
+
+  return clipRect;
+}
+
 
   // --- Apply the current clip (CliprectRef.current) to all non-mask objects ---
   function applyClipToObjects() {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !CliprectRef.current) return;
 
+    // Fabric v6 may make `clone()` async on some objects; the previous sync-clone
+    // approach could fail silently and leave objects unclipped after side switches.
+    // Reusing a single absolute-positioned clip rect is stable for this use-case.
+    const clipRect = CliprectRef.current;
+    try {
+      clipRect.set({
+        selectable: false,
+        evented: false,
+        absolutePositioned: true,
+      });
+    } catch (e) {}
+
     canvas.getObjects().forEach((obj) => {
       if (!obj) return;
       // do not change mask images or clip-border objects
       if (obj.isMaskImage) return;
-      if (Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length)
-        return;
-
+      if (obj.isClipBorder) return;
+     
       try {
-        // every object must get its own clone of the clip (so references don't collide)
-        let clipInstance = null;
-        try {
-          clipInstance = CliprectRef.current.clone();
-        } catch (err) {
-          // if clone fails, try to reuse original (fallback)
-          clipInstance = CliprectRef.current;
-        }
-        clipInstance.set({
-          selectable: false,
-          evented: false,
-          absolutePositioned: true,
-        });
-
-        obj.set("clipPath", clipInstance);
+        obj.set("clipPath", clipRect);
         if (typeof obj.setCoords === "function") obj.setCoords();
       } catch (e) {
         // ignore
@@ -374,173 +515,293 @@ useEffect(() => {
     canvas.requestRenderAll && canvas.requestRenderAll();
   }
 
-  function lockClipBorder(canvas) {
-    if (!canvas) return;
+  function getFittedPrintAreaRect(canvas, { clothKey, sideKey }) {
+    const cKey = String(clothKey || "men");
+    const cfg = CLOTH_CONFIG[cKey] || CLOTH_CONFIG.men;
+    const sKey = String(sideKey || "Front");
+    const placement = (cfg.placementBySide && cfg.placementBySide[sKey]) || { x: 0.5, y: 0.52 };
 
-    canvas.getObjects().forEach((obj) => {
-      if (Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length) {
-        obj.set({
+    const inchW = cfg.printAreaInch?.width ?? 16;
+    const inchH = cfg.printAreaInch?.height ?? 20;
+    const maxW = inchW * PRINT_DPI;
+    const maxH = inchH * PRINT_DPI;
+
+    const fitScale = Math.min(
+      canvas.width / maxW,
+      canvas.height / maxH,
+      1
+    );
+    const margin = typeof cfg.margin === "number" ? cfg.margin : 0.92;
+    const scale = fitScale * margin;
+
+    const width = maxW * scale;
+    const height = maxH * scale;
+    const left = canvas.width * placement.x;
+    const top = canvas.height * placement.y;
+
+    return { left, top, width, height };
+  }
+
+  // When the canvas container scrolls (common on mobile), Fabric's pointer math
+  // needs an offset recalculation or selection/rotation can feel "broken".
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      try {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          try {
+            if (typeof canvas.calcOffset === "function") canvas.calcOffset();
+          } catch (e) {}
+        });
+      } catch (e) {}
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      try {
+        if (raf) cancelAnimationFrame(raf);
+      } catch (e) {}
+      try {
+        container.removeEventListener("scroll", onScroll);
+      } catch (e) {}
+    };
+  }, []);
+function lockClipBorder(canvas) {
+  if (!CliprectRef.current) return;
+
+  CliprectRef.current.set({
+    selectable: false,
+    evented: false,
+    hasBorders: false,
+    hasControls: false,
+    hoverCursor: 'default'
+  });
+  CliprectRef.current.excludeFromExport = true; // so it isn't serialized at all
+  CliprectRef.current.dirty = true;
+}
+
+function removeAnyClipBorders(canvas) {
+  if (!canvas) return;
+  try {
+    const borders = canvas
+      .getObjects()
+      .filter(
+        (o) =>
+          o &&
+          (o.isClipBorder ||
+            (Array.isArray(o.strokeDashArray) &&
+              o.strokeDashArray.length &&
+              o.stroke === "red" &&
+              o.fill === "transparent"))
+      );
+    borders.forEach((b) => {
+      try {
+        canvas.remove(b);
+      } catch (e) {}
+    });
+  } catch (e) {}
+}
+
+function setBackgroundImageAsync(canvas, url) {
+  return new Promise((resolve) => {
+    if (!canvas) return resolve(null);
+
+    const imgEl = new Image();
+    imgEl.crossOrigin = "anonymous";
+    imgEl.onload = () => {
+      try {
+        const img = new fabric.Image(imgEl, {
+          originX: "center",
+          originY: "center",
+          left: canvas.width / 2,
+          top: canvas.height / 2,
           selectable: false,
           evented: false,
-          hasControls: false,
-          hasBorders: false,
-          lockMovementX: true,
-          lockMovementY: true,
-          lockScalingX: true,
-          lockScalingY: true,
-          lockRotation: true,
         });
-        obj.setCoords();
+        canvas.setBackgroundImage(img, () => resolve(img));
+      } catch (e) {
+        resolve(null);
       }
+    };
+    imgEl.onerror = () => resolve(null);
+    imgEl.src = url;
+  });
+}
+
+function loadFromJSONAsync(canvas, json) {
+  if (!canvas || !json) return Promise.resolve({ ok: false, reason: "missing" });
+
+  // Fabric v6: loadFromJSON returns a Promise. Passing a callback like older versions
+  // will be treated as a reviver and can resolve early, creating race conditions.
+  return Promise.resolve()
+    .then(() => canvas.loadFromJSON(json))
+    .then(() => {
+      try {
+        canvas.requestRenderAll && canvas.requestRenderAll();
+      } catch (e) {}
+      return { ok: true };
+    })
+    .catch((err) => {
+      console.error("loadFromJSONAsync failed:", err);
+      return { ok: false, error: err };
     });
+}
+
+async function handleSideChange(sideKey, opts = {}) {
+  const canvas = fabricCanvasRef.current;
+  if (!canvas) return;
+
+  // Token guards against rapid side switching causing older async loads to overwrite newer ones.
+  const switchToken = ++sideSwitchTokenRef.current;
+
+  // Save current side design (per-side persistence)
+  if (!opts.skipSave) saveCurrentSideDesign();
+
+  // Update UI state
+  setCurrentSide(sideKey);
+
+  const clothKey = String(opts.clothKey || cloth || "men");
+
+  // Prepare next background path
+  const nextBgUrl = getBgUrlFor({ clothKey, colorName: selectedColor, sideKey });
+  setImageUrl(nextBgUrl);
+  // ensure DOM background updates immediately (helps html2canvas captures)
+  try {
+    if (stageRef.current) {
+      stageRef.current.style.backgroundImage = `url('${nextBgUrl}')`;
+    }
+  } catch (e) {}
+
+  // Clear selection before switching
+  try {
+    canvas.discardActiveObject();
+  } catch (e) {}
+
+  // Load saved design for target side (if any)
+  const saved = designStoreRef.current?.[clothKey]?.[String(sideKey).toLowerCase()];
+
+  // Clear everything and rebuild deterministically
+  canvas.clear();
+
+  if (switchToken !== sideSwitchTokenRef.current) return;
+
+  // 1) set background
+  const bgImg = await setBackgroundImageAsync(canvas, nextBgUrl);
+
+  if (switchToken !== sideSwitchTokenRef.current) return;
+
+  // 2) load saved objects (if any)
+  if (saved) {
+    const res = await loadFromJSONAsync(canvas, saved);
+
+    if (switchToken !== sideSwitchTokenRef.current) return;
+
+    if (res && res.ok === false) {
+      // If JSON load fails, don't continue with a half-loaded canvas.
+      // We still keep the background + recreated border.
+      console.warn("Side design JSON failed to load for", sideKey);
+    }
+
+    // loadFromJSON can wipe background; restore
+    if (bgImg) {
+      try {
+        canvas.setBackgroundImage(bgImg, () => {});
+      } catch (e) {}
+    } else {
+      await setBackgroundImageAsync(canvas, nextBgUrl);
+    }
   }
-  function handleSideChange(sideKey) {
+
+  // 3) Always remove any borders that might have been serialized accidentally
+  removeAnyClipBorders(canvas);
+
+  if (switchToken !== sideSwitchTokenRef.current) return;
+
+  // 4) Recreate fresh base clip + border (border is non-selectable + non-evented)
+  const baseClip = createBaseClip(canvas, { clothKey, sideKey });
+  CliprectRef.current = baseClip;
+
+  // 5) Apply clip to design objects
+  applyClipToObjects();
+
+  // 6) Make sure clip is not interactive
+  lockClipBorder(canvas);
+
+  // 7) Keep border visible on top
+  try {
+    const border = canvas.getObjects().find((o) => o && o.isClipBorder);
+    if (border) canvas.bringObjectToFront(border);
+  } catch (e) {}
+
+  try {
+    if (typeof canvas.calcOffset === "function") canvas.calcOffset();
+  } catch (e) {}
+  canvas.requestRenderAll();
+}
+
+function handleImageChange(colorObj) {
+  if (mockMode) return;
+
+  const canvas = fabricCanvasRef.current;
+  if (!canvas) return;
+
+  canvas.discardActiveObject(); // 🔥 important
+
+  setSelectedColor(colorObj.name);
+  const newImageUrl = getBgUrlFor({ clothKey: cloth, colorName: colorObj.name, sideKey: currentSide });
+  setImageUrl(newImageUrl);
+
+  setTimeout(() => {
+    setCanvasBackground(newImageUrl);
+
+    // 🔥 re-lock border AFTER background change
+    lockClipBorder(canvas);
+
+    canvas.requestRenderAll();
+  }, 0);
+}
+
+  function composeClip() {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    saveCurrentSideDesign();
-    canvas.clear();
-    setCurrentSide(sideKey);
+    const clips = clipStackRef.current || [];
 
-    setTimeout(() => {
-      const baseClip = createBaseClip(canvas);
-      CliprectRef.current = baseClip;
-
-      const cKey = colorKey(selectedColor);
-      const saved = sideDesignsRef.current?.[sideKey]?.[cKey];
-
-      const shirtPath = `${selectedColor}/${sideKey}.jpg`;
-      setCanvasBackground(shirtPath);
-      setImageUrl(shirtPath);
-
-      if (!saved) {
-        applyClipToObjects();
-        lockClipBorder(canvas);
-        canvas.requestRenderAll();
-        return;
-      }
-
-      canvas.loadFromJSON(saved, () => {
-        applyClipToObjects();
-        lockClipBorder(canvas);
-        canvas.requestRenderAll();
-      });
-    }, 40);
-  }
-
-  function handleImageChange(colorObj) {
-    if (mockMode) return;
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    const prevColor = selectedColor;
-
-    // 1️⃣ Save current side
-    saveCurrentSideDesign();
-
-    // 2️⃣ SYNC ALL SIDES from prevColor → newColor
-    syncAllSidesToNewColor(prevColor, colorObj.name);
-
-    // 3️⃣ Update color state
-    setSelectedColor(colorObj.name);
-    const newImageUrl = `${colorObj.name}/${currentSide}.jpg`;
-    setImageUrl(newImageUrl);
-
-    setTimeout(() => {
-      setCanvasBackground(newImageUrl);
-
-      const baseClip = createBaseClip(canvas);
-      CliprectRef.current = baseClip;
-
-      const cKey = colorKey(colorObj.name);
-      const saved = sideDesignsRef.current?.[currentSide]?.[cKey];
-
-      if (!saved) {
-        applyClipToObjects();
-        lockClipBorder(canvas);
-        canvas.requestRenderAll();
-        return;
-      }
-
-      canvas.loadFromJSON(saved, () => {
-        canvas.getObjects().forEach((obj) => {
-          if (obj.isMaskImage) {
-            obj.set({
+    let composed = null;
+    if (clips.length === 0) {
+      composed = initialClipRef.current || CliprectRef.current;
+    } else if (clips.length === 1) {
+      composed = clips[0];
+    } else {
+      // These clip objects are dedicated for clipping; no need to clone them.
+      const members = clips
+        .filter(Boolean)
+        .map((c) => {
+          try {
+            c.set({
               selectable: false,
               evented: false,
               absolutePositioned: true,
             });
-            return;
-          }
-          let clipClone;
-          try {
-            clipClone = baseClip.clone();
-          } catch {
-            clipClone = baseClip;
-          }
-          clipClone.set({
-            selectable: false,
-            evented: false,
-            absolutePositioned: true,
-          });
-          obj.set("clipPath", clipClone);
-          obj.setCoords?.();
+          } catch (e) {}
+          return c;
         });
 
-        lockClipBorder(canvas);
-        canvas.requestRenderAll();
+      composed = new fabric.Group(members, {
+        absolutePositioned: true,
+        selectable: false,
+        evented: false,
       });
-    }, 40);
-  }
-
-  function composeClip() {
-    const canvas = fabricCanvasRef.current;
-    const clips = clipStackRef.current || [];
-    if (!canvas) return;
-
-    if (clips.length === 0) {
-      CliprectRef.current = initialClipRef.current;
-    } else {
-      // create a group from confirmed clip shapes
-      try {
-        const cloned = clips.map((c) => {
-          // ensure we clone to detach from canvas
-          let copy = null;
-          try {
-            copy = c.clone();
-          } catch (e) {
-            copy = c;
-          }
-          copy.set({
-            selectable: false,
-            evented: false,
-            absolutePositioned: true,
-          });
-          return copy;
-        });
-        const group = new fabric.Group(cloned, {
-          absolutePositioned: true,
-          selectable: false,
-          evented: false,
-        });
-        CliprectRef.current = group;
-      } catch (e) {
-        // fallback: use last clip only
-        CliprectRef.current = clips[clips.length - 1];
-      }
     }
 
-    // apply composed clip to all canvas objects (except visible mock previews)
-    try {
-      canvas.getObjects().forEach((obj) => {
-        if (!obj) return;
-        if (obj === mockImageRef.current) return;
-        try {
-          obj.set("clipPath", CliprectRef.current);
-          if (typeof obj.setCoords === "function") obj.setCoords();
-        } catch (e) {}
-      });
-    } catch (e) {}
+    if (!composed) return;
+    CliprectRef.current = composed;
+    applyClipToObjects();
     canvas.requestRenderAll && canvas.requestRenderAll();
   }
 
@@ -739,32 +1000,100 @@ useEffect(() => {
     }
 
     const originalBg = canvas.backgroundImage;
+    const originalBgColor = canvas.backgroundColor;
     const wasClipVisible = clipArea.visible;
 
-    // hide clip area for capture
-    try {
-      clipArea.visible = false;
-    } catch (e) {}
-    if (typeof canvas.setBackgroundImage === "function") {
-      canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
-    } else {
-      canvas.backgroundImage = null;
-      if (typeof canvas.requestRenderAll === "function")
-        canvas.requestRenderAll();
-    }
+    // Hide clip border overlays so they don't appear in the exported PNG
+    const objects = canvas.getObjects ? canvas.getObjects() : [];
+    const borderObjs = (objects || []).filter(
+      (o) =>
+        o &&
+        (o.isClipBorder ||
+          (Array.isArray(o.strokeDashArray) && o.strokeDashArray.length))
+    );
+    const prevBorderVis = borderObjs.map((o) => (o ? o.visible : true));
 
     const scale = 5;
     const bounds = clipArea.getBoundingRect(true);
 
-    const dataURL = canvas.toDataURL({
-      format: "png",
-      left: bounds.left + 1,
-      top: bounds.top + 1,
-      width: bounds.width - 1,
-      height: bounds.height - 1,
-      multiplier: scale,
-      withoutTransform: false,
-    });
+    // Clamp bounds to the actual canvas backstore to avoid invalid crop sizes
+    // (can happen with small margins / rotated clip groups).
+    const cw = canvas.width || (typeof canvas.getWidth === "function" ? canvas.getWidth() : 0);
+    const ch = canvas.height || (typeof canvas.getHeight === "function" ? canvas.getHeight() : 0);
+    const left = Math.max(0, Math.floor(bounds.left));
+    const top = Math.max(0, Math.floor(bounds.top));
+    const width = Math.max(1, Math.min(Math.ceil(bounds.width), cw - left));
+    const height = Math.max(1, Math.min(Math.ceil(bounds.height), ch - top));
+
+    let dataURL = "";
+
+    // Temporarily make export transparent (no shirt/background).
+    try {
+      // hide clip area for capture
+      try {
+        clipArea.visible = false;
+      } catch (e) {}
+
+      try {
+        borderObjs.forEach((o) => {
+          if (o) o.visible = false;
+        });
+      } catch (e) {}
+
+      if (typeof canvas.setBackgroundImage === "function") {
+        canvas.setBackgroundImage(null, () => {});
+      } else {
+        canvas.backgroundImage = null;
+      }
+
+      // ensure background color is transparent
+      if (typeof canvas.setBackgroundColor === "function") {
+        canvas.setBackgroundColor(null, () => {});
+      } else {
+        canvas.backgroundColor = null;
+      }
+
+      canvas.requestRenderAll && canvas.requestRenderAll();
+
+      dataURL = canvas.toDataURL({
+        format: "png",
+        left,
+        top,
+        width,
+        height,
+        multiplier: scale,
+        withoutTransform: false,
+        backgroundColor: null,
+      });
+    } catch (e) {
+      console.error("downloadClipArea export failed:", e);
+      return;
+    } finally {
+      // restore
+      try {
+        borderObjs.forEach((o, i) => {
+          if (o) o.visible = prevBorderVis[i];
+        });
+      } catch (e) {}
+
+      if (typeof canvas.setBackgroundImage === "function") {
+        canvas.setBackgroundImage(originalBg, () => {});
+      } else {
+        canvas.backgroundImage = originalBg;
+      }
+
+      if (typeof canvas.setBackgroundColor === "function") {
+        canvas.setBackgroundColor(originalBgColor ?? null, () => {});
+      } else {
+        canvas.backgroundColor = originalBgColor ?? null;
+      }
+
+      try {
+        clipArea.visible = wasClipVisible;
+      } catch (e) {}
+
+      canvas.requestRenderAll && canvas.requestRenderAll();
+    }
 
     const image = new Image();
     image.onload = () => {
@@ -796,26 +1125,13 @@ useEffect(() => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // restore
-      if (typeof canvas.setBackgroundImage === "function") {
-        canvas.setBackgroundImage(originalBg, canvas.renderAll.bind(canvas));
-      } else {
-        canvas.backgroundImage = originalBg;
-        if (typeof canvas.requestRenderAll === "function")
-          canvas.requestRenderAll();
-      }
-      try {
-        clipArea.visible = wasClipVisible;
-      } catch (e) {}
-      if (typeof canvas.renderAll === "function") canvas.renderAll();
     };
     image.src = dataURL;
   }
 
   async function downloadCanvasWithBackground() {
     const canvas = fabricCanvasRef.current;
-    const container = containerRef.current;
+    const container = stageRef.current || containerRef.current;
 
     if (!canvas || !container) {
       alert("Canvas or container not found.");
@@ -825,51 +1141,9 @@ useEffect(() => {
     canvas.discardActiveObject();
     canvas.requestRenderAll();
 
-    // if you change the border color change here as well
-    const objects = canvas.getObjects() || [];
-    const borderObjs = objects.filter(
-      (o) =>
-        o?.stroke &&
-        Array.isArray(o.strokeDashArray) &&
-        o.strokeDashArray.length > 0
-    );
-    const prevVis = borderObjs.map((o) => o.visible);
-    borderObjs.forEach((o) => (o.visible = false));
-    canvas.requestRenderAll();
-
-    await nextFrame();
-
     try {
-      const exportCanvas = await html2canvas(container, {
-        backgroundColor: null,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        scale: 3,
-        width: container.offsetWidth,
-        height: container.offsetHeight,
-        scrollX: 0,
-        scrollY: 0,
-      });
-
-      const fmt = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      });
-
-      const parts = Object.fromEntries(
-        fmt.formatToParts(new Date()).map((p) => [p.type, p.value])
-      );
-
-      const indiaIsoSafe = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}-${parts.minute}-${parts.second}`;
-
-      const dataUrl = exportCanvas.toDataURL("image/png");
+      const indiaIsoSafe = getIndiaIsoSafe();
+      const dataUrl = await captureFullMockupDataUrl();
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `Design_${indiaIsoSafe}_full-mockup.png`;
@@ -890,12 +1164,306 @@ useEffect(() => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } finally {
-      borderObjs.forEach((o, i) => {
-        if (o) o.visible = prevVis[i];
-      });
-      canvas.requestRenderAll();
     }
+  }
+
+  function getIndiaIsoSafe() {
+    const fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = Object.fromEntries(
+      fmt.formatToParts(new Date()).map((p) => [p.type, p.value])
+    );
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}-${parts.minute}-${parts.second}`;
+  }
+
+  const extractCssUrl = (cssBg) => {
+    const v = String(cssBg || "").trim();
+    const m = v.match(/^url\((['"]?)(.*?)\1\)$/i);
+    return m ? m[2] : "";
+  };
+
+  const loadImageEl = (src, { crossOrigin = "anonymous" } = {}) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      try {
+        img.crossOrigin = crossOrigin;
+      } catch (e) {}
+      img.onload = () => resolve(img);
+      img.onerror = (e) => reject(e);
+      img.src = src;
+    });
+  };
+
+  const captureFullMockupFallbackDataUrl = async ({ scale = 3 } = {}) => {
+    const canvas = fabricCanvasRef.current;
+    const stage = stageRef.current || containerRef.current;
+    if (!canvas || !stage) throw new Error("Canvas or container not found");
+
+    const cssW = stage.offsetWidth || 0;
+    const cssH = stage.offsetHeight || 0;
+    if (!cssW || !cssH) throw new Error("Stage has zero size");
+
+    // Figure out the shirt background URL (prefer stage's computed style).
+    let bgUrl = "";
+    try {
+      const computed = window.getComputedStyle(stage);
+      bgUrl = extractCssUrl(computed.backgroundImage) || extractCssUrl(stage.style.backgroundImage);
+    } catch (e) {}
+    bgUrl = bgUrl || imageUrl;
+
+    const out = document.createElement("canvas");
+    out.width = Math.round(cssW * scale);
+    out.height = Math.round(cssH * scale);
+    const ctx = out.getContext("2d");
+    if (!ctx) throw new Error("2D context not available");
+    ctx.clearRect(0, 0, out.width, out.height);
+
+    // Draw shirt background as 'contain'
+    if (bgUrl) {
+      try {
+        const bg = await loadImageEl(bgUrl, { crossOrigin: "anonymous" });
+        const iw = bg.naturalWidth || bg.width || 1;
+        const ih = bg.naturalHeight || bg.height || 1;
+        const s = Math.min(out.width / iw, out.height / ih);
+        const dw = iw * s;
+        const dh = ih * s;
+        const dx = (out.width - dw) / 2;
+        const dy = (out.height - dh) / 2;
+        ctx.drawImage(bg, dx, dy, dw, dh);
+      } catch (e) {
+        // if bg fails, still export design layer
+      }
+    }
+
+    // Draw Fabric design layer (without Fabric background, to avoid double-shirt).
+    const originalBg = canvas.backgroundImage;
+    const originalBgColor = canvas.backgroundColor;
+    try {
+      try {
+        if (typeof canvas.setBackgroundImage === "function") {
+          canvas.setBackgroundImage(null, () => {});
+        } else {
+          canvas.backgroundImage = null;
+        }
+      } catch (e) {}
+      try {
+        if (typeof canvas.setBackgroundColor === "function") {
+          canvas.setBackgroundColor(null, () => {});
+        } else {
+          canvas.backgroundColor = null;
+        }
+      } catch (e) {}
+
+      canvas.requestRenderAll && canvas.requestRenderAll();
+      await nextFrame();
+
+      const designUrl = canvas.toDataURL({
+        format: "png",
+        multiplier: scale,
+        withoutTransform: false,
+        backgroundColor: null,
+      });
+
+      const designImg = await loadImageEl(designUrl, { crossOrigin: null });
+      ctx.drawImage(designImg, 0, 0, out.width, out.height);
+    } finally {
+      try {
+        if (typeof canvas.setBackgroundImage === "function") {
+          canvas.setBackgroundImage(originalBg || null, () => {});
+        } else {
+          canvas.backgroundImage = originalBg || null;
+        }
+      } catch (e) {}
+      try {
+        if (typeof canvas.setBackgroundColor === "function") {
+          canvas.setBackgroundColor(originalBgColor ?? null, () => {});
+        } else {
+          canvas.backgroundColor = originalBgColor ?? null;
+        }
+      } catch (e) {}
+      canvas.requestRenderAll && canvas.requestRenderAll();
+    }
+
+    return out.toDataURL("image/png");
+  };
+
+  async function captureFullMockupDataUrl() {
+    const canvas = fabricCanvasRef.current;
+    const container = stageRef.current || containerRef.current;
+    if (!canvas || !container) throw new Error("Canvas or container not found");
+
+    // Hide the dashed clip border during capture
+    const objects = canvas.getObjects ? canvas.getObjects() : [];
+    const borderObjs = (objects || []).filter(
+      (o) =>
+        o &&
+        (o.isClipBorder ||
+          (Array.isArray(o.strokeDashArray) && o.strokeDashArray.length))
+    );
+    const prevVis = borderObjs.map((o) => (o ? o.visible : true));
+
+    try {
+      // Ensure transforms like rotation are fully applied before capture.
+      try {
+        canvas.discardActiveObject && canvas.discardActiveObject();
+      } catch (e) {}
+
+      borderObjs.forEach((o) => {
+        if (o) o.visible = false;
+      });
+      canvas.requestRenderAll && canvas.requestRenderAll();
+      await nextFrame();
+
+      try {
+        const exportCanvas = await html2canvas(container, {
+          backgroundColor: null,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          scale: 3,
+          width: container.offsetWidth,
+          height: container.offsetHeight,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        return exportCanvas.toDataURL("image/png");
+      } catch (err) {
+        // Some environments fail to html2canvas a DOM+canvas when objects are rotated.
+        // Fall back to a deterministic composite export.
+        console.warn("html2canvas failed; using fallback mockup capture", err);
+        return await captureFullMockupFallbackDataUrl({ scale: 3 });
+      }
+    } finally {
+      try {
+        borderObjs.forEach((o, i) => {
+          if (o) o.visible = prevVis[i];
+        });
+      } catch (e) {}
+      canvas.requestRenderAll && canvas.requestRenderAll();
+    }
+  }
+
+  async function downloadBothSidesZip() {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      alert("Canvas not found.");
+      return;
+    }
+
+    const originalSide = currentSide;
+    const indiaIsoSafe = getIndiaIsoSafe();
+    const zip = new JSZip();
+
+    // Persist current side before we start switching
+    saveCurrentSideDesign();
+
+    try {
+      for (const sideKey of ["Front", "Back"]) {
+        await handleSideChange(sideKey, { skipSave: true });
+        // allow layout/background to settle for html2canvas
+        await nextFrame();
+        await new Promise((r) => setTimeout(r, 50));
+
+        const dataUrl = await captureFullMockupDataUrl();
+        const base64 = String(dataUrl).split(",")[1] || "";
+        if (!base64) throw new Error("Failed to encode PNG");
+        zip.file(`Design_${indiaIsoSafe}_${sideKey}_full-mockup.png`, base64, {
+          base64: true,
+        });
+      }
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Design_${indiaIsoSafe}_Front_Back_full-mockups.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("ZIP export failed:", e);
+      alert("ZIP export failed. Check console for details.");
+    } finally {
+      // Restore the user's original side
+      try {
+        await handleSideChange(originalSide, { skipSave: true });
+      } catch (e) {}
+    }
+  }
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function openPreviewBothSides() {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      alert("Canvas not found.");
+      return;
+    }
+
+    const token = ++previewTokenRef.current;
+    const originalSide = currentSide;
+
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewError("");
+    setPreviewImages({ Front: null, Back: null });
+
+    // Persist current side before we start switching
+    saveCurrentSideDesign();
+
+    let cancelled = false;
+    const results = { Front: null, Back: null };
+
+    try {
+      for (const sideKey of ["Front", "Back"]) {
+        await handleSideChange(sideKey, { skipSave: true });
+        await nextFrame();
+        await sleep(60);
+
+        if (token !== previewTokenRef.current) {
+          cancelled = true;
+          break;
+        }
+
+        results[sideKey] = await captureFullMockupDataUrl();
+      }
+    } catch (e) {
+      if (token === previewTokenRef.current) {
+        console.error("Preview capture failed:", e);
+        setPreviewError("Preview failed. Please try again.");
+      }
+    } finally {
+      // Always restore the user's original side, even if the preview was cancelled.
+      try {
+        await handleSideChange(originalSide, { skipSave: true });
+      } catch (e) {}
+
+      if (!cancelled && token === previewTokenRef.current) {
+        setPreviewImages(results);
+      }
+
+      if (token === previewTokenRef.current) {
+        setPreviewLoading(false);
+      }
+    }
+  }
+
+  function closePreview() {
+    previewTokenRef.current++;
+    setPreviewOpen(false);
+    setPreviewLoading(false);
+    setPreviewError("");
+    setPreviewImages({ Front: null, Back: null });
   }
 
   const nextFrame = () => {
@@ -918,10 +1486,6 @@ useEffect(() => {
         canvas.remove(mockImageRef.current);
         mockImageRef.current = null;
       }
-      if (mockClipRef.current) {
-        // mockClipRef may be a clip object not added to canvas â€” just clear reference
-        mockClipRef.current = null;
-      }
     } catch (e) {}
 
     const imgEl = new Image();
@@ -941,19 +1505,7 @@ useEffect(() => {
         absolutePositioned: true,
       });
 
-      // create a separate clip image (not added to canvas) to be used as clipPath when confirmed
-      const clipImage = new fabric.Image(imgEl, {
-        left: img.left,
-        top: img.top,
-        originX: "center",
-        originY: "center",
-        absolutePositioned: true,
-        selectable: false,
-        evented: false,
-      });
-
       mockImageRef.current = img; // visible
-      mockClipRef.current = clipImage; // prepared clip image (not used until confirm)
 
       canvas.add(img);
       try {
@@ -971,7 +1523,6 @@ useEffect(() => {
       if (mockImageRef.current) canvas.remove(mockImageRef.current);
     } catch (e) {}
     mockImageRef.current = null;
-    mockClipRef.current = null;
     setMockMode(false);
     // restore clip to any existing CliprectRef if needed (no-op)
     canvas && canvas.requestRenderAll && canvas.requestRenderAll();
@@ -995,7 +1546,6 @@ useEffect(() => {
 
         // recompute composed clip and apply
         composeClip();
-        setClipCount(clipStackRef.current.length);
 
         // make the visible mock non-interactive template (keep on canvas)
         try {
@@ -1005,9 +1555,6 @@ useEffect(() => {
             isMaskImage: true, // âœ… preserve mask flag
           });
         } catch (e) {}
-
-        // clear temporary clip ref
-        mockClipRef.current = null;
 
         // exit mock mode and re-enable buttons
         setMockMode(false);
@@ -1062,77 +1609,9 @@ useEffect(() => {
     }
   }
 
-  // function handleImageChange(colorObj) {
-  //   if (mockMode) return;
-
-  //   const canvas = fabricCanvasRef.current;
-  //   if (!canvas) return;
-
-  //   // 1️⃣ Save current design
-  //   const json = canvas.toJSON(['isMaskImage']);
-  //   setSideDesigns(prev => ({
-  //     ...prev,
-  //     [currentSide]: {
-  //       ...prev[currentSide],
-  //       [selectedColor]: json,
-  //     },
-  //   }));
-
-  //   // 2️⃣ Update color / URL (note: no slash if your files are like Blackfront.png)
-  //   setSelectedColor(colorObj.name);
-  //   const newImageUrl = `${colorObj.name}/${currentSide}.png`;
-  //   console.log("Changing to", newImageUrl);
-  //   setImageUrl(newImageUrl);
-
-  //   // 3️⃣ Remove ONLY shirt image
-  //   if (baseShirtRef.current[currentSide]) {
-  //     try {
-  //       canvas.remove(baseShirtRef.current[currentSide]);
-  //     } catch (e) {
-  //       console.log("Old shirt not found");
-  //     }
-  //   }
-
-  //   // 4️⃣ Load new shirt
-  //   const imgElement = new Image();
-  //   imgElement.crossOrigin = "anonymous";
-  //   imgElement.src = newImageUrl;
-  //   imgElement.onload = () => {
-  //     const img = new fabric.Image(imgElement, {
-  //       left: canvas.getWidth() / 2,
-  //       top: canvas.getHeight() / 2,
-  //       originX: "center",
-  //       originY: "center",
-  //       scaleX: 1,
-  //       scaleY: 1,
-  //       selectable: false,
-  //       evented: false,
-  //       absolutePositioned: true,
-  //     });
-
-  //     canvas.add(img);
-  //     baseShirtRef.current[currentSide] = img;
-
-  //     // // Put shirt behind everything
-  //     // canvas.moveTo(img, 0);
-
-  //     // Ensure existing clipBorder (created in createBaseClip) stays on top
-  //     const border = canvas
-  //       .getObjects()
-  //       .find(o => Array.isArray(o.strokeDashArray) && o.strokeDashArray.length);
-  //     if (border) {
-  //       border.selectable = false;
-  //       border.evented = false;
-  //       // canvas.bringToFront(border);
-  //       canvas.add(border);
-  //     }
-
-  //     canvas.requestRenderAll();
-  //   };
-  // }
-
   return (
-    <div className="mt-35"
+    <div
+      className="designerLayout"
       style={{
         display: "flex",
         minHeight: "100vh",
@@ -1142,6 +1621,7 @@ useEffect(() => {
     >
       {/* LEFT PANEL */}
       <div
+        className="designerLeft"
         style={{
           width: 300,
           padding: 16,
@@ -1228,6 +1708,20 @@ useEffect(() => {
               Download Full Canvas
             </button>
             <button
+              onClick={() => openPreviewBothSides()}
+              disabled={mockMode}
+              style={{ padding: "8px 12px", marginLeft: 8 }}
+            >
+              Preview Both Sides
+            </button>
+            <button
+              onClick={() => downloadBothSidesZip()}
+              disabled={mockMode}
+              style={{ padding: "8px 12px", marginLeft: 8 }}
+            >
+              Download Both Sides ZIP
+            </button>
+            <button
               onClick={handleMockPrint}
               disabled={mockMode}
               style={{ padding: "8px 12px" }}
@@ -1246,6 +1740,41 @@ useEffect(() => {
                 color: "#6b7280",
               }}
             >
+              Select Product:{" "}
+              <span style={{ color: "#000" }}>{CLOTH_CONFIG[cloth]?.label || cloth}</span>
+            </p>
+
+            <select
+              disabled={mockMode}
+              value={cloth}
+              onChange={(e) => handleClothChange(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                background: mockMode ? "#f3f4f6" : "#fff",
+                color: "#111827",
+                marginBottom: 18,
+              }}
+            >
+              {Object.keys(CLOTH_CONFIG).map((key) => (
+                <option key={key} value={key}>
+                  {CLOTH_CONFIG[key]?.label || key}
+                </option>
+              ))}
+            </select>
+
+            <p
+              style={{
+                fontSize: "12px",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                marginBottom: "12px",
+                color: "#6b7280",
+              }}
+            >
               Select Color:{" "}
               <span style={{ color: "#000" }}>{selectedColor}</span>
             </p>
@@ -1254,8 +1783,8 @@ useEffect(() => {
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "12px",
-                padding: "4px",
+                gap: "30px",
+                padding: "10px 10px",
               }}
             >
               {AVAILABLE_COLORS.map((color) => {
@@ -1265,9 +1794,27 @@ useEffect(() => {
                   <button
                     key={color.value}
                     disabled={mockMode}
-                    
                     // Calling handleImageChange and any other logic here
                     onClick={() => handleImageChange(color)}
+                    onMouseEnter={(e) => {
+                      if (mockMode) return;
+                      setHoveredColorName(color.name);
+                      tweenTo(e.currentTarget, { scale: 1.15 });
+                    }}
+                    onMouseLeave={(e) => {
+                      setHoveredColorName((prev) =>
+                        prev === color.name ? null : prev
+                      );
+                      tweenTo(e.currentTarget, { scale: 1 });
+                    }}
+                    onMouseDown={(e) => {
+                      if (mockMode) return;
+                      tweenTo(e.currentTarget, { scale: 0.9, duration: 0.08 });
+                    }}
+                    onMouseUp={(e) => {
+                      if (mockMode) return;
+                      tweenTo(e.currentTarget, { scale: 1.15 });
+                    }}
                     style={{
                       position: "relative",
                       width: 40,
@@ -1290,29 +1837,25 @@ useEffect(() => {
                       boxShadow: isActive
                         ? "0 4px 12px rgba(0,0,0,0.3)"
                         : "0 2px 4px rgba(0,0,0,0.05)",
-                      transition: "all 0.2s ease",
+                      transition:
+                        "border-color 0.2s ease, outline-color 0.2s ease, box-shadow 0.2s ease",
                     }}
                   >
-                    {/* 3. The "Moving" Black Ring (Framer Motion) */}
-                    
-                      {isActive && (
-                        <div
-                          layoutId="colorOutline" // This makes the ring "slide" between colors
-                          
-                          style={{
-                            position: "absolute",
-                            inset: -5, // Slightly outside the button
-                            borderRadius: "50%",
-                            border: "2px solid #000",
-                            pointerEvents: "none",
-                          }}
-                        />
-                      )}
-                    
+                    {/* Active ring */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: -5,
+                        borderRadius: "50%",
+                        border: "2px solid #000",
+                        pointerEvents: "none",
+                        opacity: isActive ? 1 : 0,
+                        transition: "opacity 0.18s ease",
+                      }}
+                    />
 
                     {/* Tooltip */}
                     <span
-                      
                       style={{
                         position: "absolute",
                         backgroundColor: "#000",
@@ -1323,6 +1866,12 @@ useEffect(() => {
                         whiteSpace: "nowrap",
                         pointerEvents: "none",
                         zIndex: 10,
+                        opacity: hoveredColorName === color.name ? 1 : 0,
+                        transform:
+                          hoveredColorName === color.name
+                            ? "translateY(35px)"
+                            : "translateY(10px)",
+                        transition: "opacity 0.18s ease, transform 0.18s ease",
                       }}
                     >
                       {color.name}
@@ -1444,34 +1993,35 @@ useEffect(() => {
 
       <div
         ref={containerRef}
+        className="designerCanvasArea"
         style={{
           flex: 1,
-          backgroundImage: `url('${imageUrl}')`,
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          overflow: "auto",
         }}
       >
-        <canvas ref={canvasRef} />{" "}
         <div
+          ref={stageRef}
+          className="designerStage"
           style={{
-            position: "absolute",
-            width: "251px",
-            height: "351px",
-            left: "40%",
-            top: "48%",
-            transform: "translate(-50%, -50%)",
-            border: "2px dashed red",
-            pointerEvents: "none", // 🔥 impossible to select
-            boxSizing: "border-box",
+            backgroundImage: `url('${imageUrl}')`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundSize: "contain",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
           }}
-        />
+        >
+          <canvas ref={canvasRef} />
+        </div>
       </div>
 
       {/* RIGHT SIDE THUMBNAIL SWITCHER */}
       <div
+        className="designerSides"
         style={{
           display: "flex-row",
           gap: "12px",
@@ -1482,13 +2032,24 @@ useEffect(() => {
       >
         {Object.values(SIDE_CONFIG).map((side) => {
           const isActive = currentSide === side.key;
-          const thumbsrc = `${selectedColor}/${side.key}.jpg`;
+          const thumbsrc = getBgUrlFor({ clothKey: cloth, colorName: selectedColor, sideKey: side.key });
 
           return (
             <button
               key={side.key}
               onClick={() => handleSideChange(side.key)}
-              
+              onMouseEnter={(e) => {
+                tweenTo(e.currentTarget, { y: -4, scale: 1.02 });
+              }}
+              onMouseLeave={(e) => {
+                tweenTo(e.currentTarget, { y: 0, scale: 1 });
+              }}
+              onMouseDown={(e) => {
+                tweenTo(e.currentTarget, { scale: 0.95, duration: 0.08 });
+              }}
+              onMouseUp={(e) => {
+                tweenTo(e.currentTarget, { y: -4, scale: 1.02 });
+              }}
               style={{
                 position: "relative",
                 display: "flex",
@@ -1507,23 +2068,17 @@ useEffect(() => {
               }}
             >
               {/* The Selection Ring */}
-
-                {isActive && (
-                  <div
-                    layoutId="outline"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{
-                      position: "absolute",
-                      inset: -2,
-                      border: "2px solid #000",
-                      borderRadius: "18px",
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-
+              <div
+                style={{
+                  position: "absolute",
+                  inset: -2,
+                  border: "2px solid #000",
+                  borderRadius: "18px",
+                  pointerEvents: "none",
+                  opacity: isActive ? 1 : 0,
+                  transition: "opacity 0.18s ease",
+                }}
+              />
 
               <div
                 style={{
@@ -1562,6 +2117,195 @@ useEffect(() => {
           );
         })}
       </div>
+
+      {previewOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onMouseDown={(e) => {
+            // click outside closes
+            if (e.target === e.currentTarget) closePreview();
+          }}
+        >
+          <div
+            style={{
+              width: "min(1240px, 98vw)",
+              maxHeight: "min(860px, 94vh)",
+              background: "#fff",
+              borderRadius: 20,
+              overflow: "hidden",
+              border: "1px solid rgba(229,231,235,0.9)",
+              boxShadow:
+                "0 30px 70px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.18)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>
+                  Preview
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  {selectedColor} • Front + Back
+                </div>
+              </div>
+              <button
+                onClick={closePreview}
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #e5e7eb",
+                  background: "#ff0101ff",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  color: "#fff",
+                  lineHeight: "34px",
+                }}
+                aria-label="Close preview"
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              style={{
+                padding: 14,
+                overflow: "auto",
+                background: "#fafafa",
+                flex: 1,
+              }}
+            >
+              {previewLoading && (
+                <div style={{ color: "#111", fontWeight: 600 }}>
+                  Generating preview…
+                </div>
+              )}
+              {!previewLoading && previewError && (
+                <div style={{ color: "#b91c1c", fontWeight: 700 }}>
+                  {previewError}
+                </div>
+              )}
+
+              {!previewLoading && !previewError && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+                    gap: 18,
+                  }}
+                >
+                  {["Front", "Back"].map((sideKey) => (
+                    <div
+                      key={sideKey}
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 16,
+                        padding: 14,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, color: "#111" }}>
+                          {sideKey}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          border: "1px solid #f3f4f6",
+                          background: "#fff",
+                          height: "min(58vh, 560px)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {previewImages && previewImages[sideKey] ? (
+                          <img
+                            src={previewImages[sideKey]}
+                            alt={`${sideKey} preview`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "block",
+                              objectFit: "contain",
+                              transform: "scale(2)",
+                              transformOrigin: "center",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              padding: 24,
+                              color: "#6b7280",
+                              fontWeight: 600,
+                            }}
+                          >
+                            No preview
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                padding: 14,
+                borderTop: "1px solid #e5e7eb",
+                display: "flex",
+                justifyContent: "flex-end",
+                background: "#fff",
+              }}
+            >
+              <button
+                onClick={closePreview}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  border: "1px solid #e5e7eb",
+                  background: "#2cac30ff",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

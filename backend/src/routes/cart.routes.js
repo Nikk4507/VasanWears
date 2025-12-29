@@ -4,6 +4,7 @@ import {
   getCart,
   removeFromCart,
   clearCart,
+  updateCartItem,
 } from "../controllers/cart.controllers.js";
 
 import verifyJwt from "../middleware/auth.middleware.js";
@@ -14,5 +15,6 @@ router.post("/add", verifyJwt, addToCart);
 router.get("/", verifyJwt, getCart);
 router.delete("/remove/:itemId", verifyJwt, removeFromCart);
 router.delete("/clear", verifyJwt, clearCart);
+router.delete("/update/:itemId", verifyJwt, updateCartItem);
 
 export default router;

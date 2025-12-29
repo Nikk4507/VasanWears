@@ -9,7 +9,8 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
   const drawerRef = useRef(null);
   const timeline = useRef(null);
   const { items, subtotal, loading } = useCartStore();
-
+  console.log("Items ", items);
+  
   useGSAP(() => {
     timeline.current = gsap.timeline({ paused: true });
 
@@ -100,7 +101,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
                 >
                   <div className="cartImage">
                     <img
-                      src={item.variant?.featuredImage}
+                      src={item.product?.featuredImage}
                       alt={item.product?.title}
                       className="w-20"
                     />

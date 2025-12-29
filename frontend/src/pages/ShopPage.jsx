@@ -43,13 +43,7 @@ const ShopPage = () => {
         const res = await getWishlistApi();
         setWishlistProductIds(res.data.productIds || []);
       } catch (err) {
-        if (err.response?.status === 401) {
-          navigate("/login", {
-            state: { from: `/product/${slug}` }, // optional redirect back
-          });
-        } else {
-          console.error("Wishlist error:", err);
-        }
+        console.log(err);
       }
     };
 
