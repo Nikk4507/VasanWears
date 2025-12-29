@@ -62,12 +62,12 @@ const emailTemplate = ({ title, message, buttonText, buttonLink }) => `
 </body>
 </html>
 `;
-const sendEmail = async ({ email, subject, message, url, title }) => {
+const sendEmail = async ({ email, subject, message, url, title, buttonText="Reset Password" }) => {
   const response = await resend.emails.send({
     from: `Vasan Wears <${process.env.EMAIL_USER}>`,
     to: email,
     subject,
-    html: emailTemplate({ title, message, buttonText: "Reset Password", buttonLink: url })
+    html: emailTemplate({ title, message, buttonText, buttonLink: url })
   });
 };
 

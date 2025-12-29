@@ -8,8 +8,8 @@ import { useCartStore } from "../../store/cartStore";
 const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
   const drawerRef = useRef(null);
   const timeline = useRef(null);
-  const { items, subtotal, loading } = useCartStore();
-  console.log("Items ", items);
+  const { items, subtotal, loading, updateQty, removeItem } = useCartStore();
+  console.log("Cart ",items);
   
   useGSAP(() => {
     timeline.current = gsap.timeline({ paused: true });
@@ -118,17 +118,27 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
                       Price: {item.price}
                     </span>
                     <div className="flex gap-2 items-center mt-2 ">
-                      <button className="w-8 py-0.5 bg-primary1 cursor-pointer">
+                      <button
+                        className="w-8 py-0.5 bg-primary1 cursor-pointer"
+                        onClick={() => updateQty(item._id, item.quantity + 1)}
+                      >
                         +
                       </button>
                       <span className="text-sm font-bold">
                         {" "}
                         {item.quantity}
                       </span>
-                      <button className="w-8 py-0.5 bg-primary1 cursor-pointer">
+                      <button
+                        className="w-8 py-0.5 bg-primary1 cursor-pointer"
+                        onClick={() => updateQty(item._id, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                      >
                         -
                       </button>
-                      <button className=" cursor-pointer bg-primary3 rounded-full w-6 h-6 flex items-center justify-center absolute -top-2 md:top-0 right-0">
+                      <button
+                        className=" cursor-pointer bg-primary3 rounded-full w-6 h-6 flex items-center justify-center absolute -top-2 md:top-0 right-0"
+                        onClick={() => removeItem(item._id)}
+                      >
                         <RiCloseLine className="w-4" />
                       </button>
                     </div>
@@ -144,6 +154,7 @@ const CartDrawer = ({ setCartDrawer, cartDrawer }) => {
                 to="/shop"
                 className="py-2.5 px-8 rounded-xl font-semibold text-primary2 
              transition-all duration-300 btn-slide md:text-base text-sm"
+                onClick={() => setCartDrawer(false)}
               >
                 Return to Shop
               </Link>

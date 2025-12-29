@@ -50,5 +50,13 @@ export const clearCartApi = async () => {
         throw err;
     }
 };
+export const updateCartItemApi = async (itemId, quantity) => {
+    try {
+        const res = await API.delete(`/cart/update/${itemId}`, { data: { quantity } });
+        return res.data;
+    } catch (err) {
+        throw err;
+    }
+};
 
 // Google Login API call
