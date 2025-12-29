@@ -83,7 +83,7 @@ export const placeOrder = async (req, res) => {
       message: `
     A new order has been placed.<br/><br/>
     <b>Order ID:</b> ${order._id}<br/>
-    <b>Customer:</b> ${user.name} (${user.email})<br/>
+    <b>Customer:</b> ${user.fullName} (${user.email})<br/>
     <b>Total:</b> ₹${order.totalAmount}
   `,
       buttonText: "View in Admin Panel",
