@@ -40,7 +40,8 @@ const forgotPassword = async (req, res) => {
         subject: "Vasan Wears - Password Reset",
         message,
         url: resetUrl,
-        title: "Password Reset Request"
+        title: "Password Reset Request",
+        buttonText: "Reset Password",
     });
 
     res.json({ message: "Reset link sent to email" });

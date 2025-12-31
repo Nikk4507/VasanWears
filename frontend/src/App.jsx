@@ -47,6 +47,7 @@ import ResetPassword from "./components/Admin/pages/ResetPassword";
 import TermsAndCondition from "./pages/TermsAndCondition";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationPolicy from "./pages/CancellationPolicy";
+import ContactUs from "./pages/ContactUs";
 const App = () => {
   const setUser = useAuthStore((s) => s.setUser);
   const setAuthChecked = useAuthStore((s) => s.setAuthChecked);
@@ -90,6 +91,7 @@ const App = () => {
           <Route path="/terms-and-condition" element={<TermsAndCondition />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/refund-and-cancellation" element={<CancellationPolicy />} />
+          <Route path="/contact-us" element={<ContactUs />} />
 
           <Route path="*" element={<NotFound />} />
 

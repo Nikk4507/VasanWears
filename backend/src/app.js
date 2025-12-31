@@ -27,6 +27,8 @@ import cartRoutes from "./routes/cart.routes.js"
 import wishListRoutes from "./routes/wishlist.routes.js"
 import orderRoutes from "./routes/order.routes.js"
 import paymentRoutes from "./routes/payment.routes.js"
+import subscriberRoutes from "./routes/subscriber.routes.js"
+import contactRoutes from "./routes/contact.routes.js"
 app.use("/api/colors", colorRoutes);
 app.use("/api/sizes", sizeRoutes);
 app.use("/api/user", userRouter)
@@ -38,4 +40,5 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishListRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/contact", contactRoutes);
 export {app}

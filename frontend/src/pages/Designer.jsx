@@ -29,9 +29,9 @@ const resolveClothConfig = (category, subCategory) => {
   const subSlug = subCategory?.slug?.toLowerCase();
 
   // MEN
-  if(catSlug==="hoodie")return "hoodie"
-  if(catSlug==="sweatshirt")return "sweatshirt"
-  if (catSlug === "men" ) {
+  if (catSlug === "hoodie") return "hoodie";
+  if (catSlug === "sweatshirt") return "sweatshirt";
+  if (catSlug === "men") {
     if (subSlug === "hoodie") return "hoodie";
     if (subSlug === "sweatshirt") return "sweatshirt";
     return "men"; // default men t-shirt
@@ -3686,8 +3686,8 @@ const Designer = ({ productKey } = {}) => {
 
         const category = catRes.data;
         const subCategory = subRes?.data;
-        console.log("Category ",category?.name);
-        
+        console.log("Category ", category?.name);
+
         const clothKey = resolveClothConfig(category, subCategory);
         console.log("Clothkey ", clothKey);
         if (!clothKey) return;
@@ -3705,7 +3705,7 @@ const Designer = ({ productKey } = {}) => {
   }, [categoryFromUrl, subCategoryFromUrl]);
 
   return (
-    <div className="md:mt-35 mt-30 w-full bg-gray-50 text-gray-900 flex flex-col md:flex-row min-h-screen">
+    <div className="md:mt-35 mt-30 w-full bg-gray-50 text-gray-900 flex flex-col md:flex-row min-h-screen py-20">
       <input
         ref={fileInputRef}
         type="file"
@@ -3739,7 +3739,7 @@ const Designer = ({ productKey } = {}) => {
           mobileArrangeOpen ||
           previewOpen
         ) && (
-          <div className="md:hidden fixed left-3 top-3 z-[50]">
+          <div className="md:hidden  left-3 top-35 z-[50]">
             <div className="p-1 rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm flex gap-1">
               <button
                 type="button"

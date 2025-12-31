@@ -2,47 +2,54 @@ import React, { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { RiSearch2Line } from "@remixicon/react";
+import { useNavigate } from "react-router-dom";
 
 const SearchBar = ({ searchModel, topBar }) => {
   const [searchText, setSearchText] = useState("");
   const barRef = useRef(null);
   const t1 = useRef(null);
+  const navigate = useNavigate();
 
   useGSAP(() => {
     t1.current = gsap.timeline({ paused: true });
 
     t1.current.from(barRef.current, {
-      y: 80, // slide down
+      y: 80,
       opacity: 0,
       duration: 0.5,
       ease: "power3.out",
     });
-    
   }, []);
 
   useGSAP(() => {
-    if (searchModel) {
-      t1.current.play();
-    } else {
-      t1.current.reverse();
-    }
+    searchModel ? t1.current.play() : t1.current.reverse();
   }, [searchModel]);
+
+  const handleSearch = () => {
+    if (!searchText.trim()) return;
+    navigate(`/shop?search=${encodeURIComponent(searchText.trim())}`);
+  };
 
   return (
     <div
       ref={barRef}
-      className={`absolute left-0 ${topBar? 'top-[120px] md:top-[143px]': 'top-[83px] md:top-[103px]'} w-full bg-primary2 py-4 md:py-8 searchBarContainer flex justify-center items-center px-4 md:px-10 xl:px-50 z-1 ${searchModel ? "pointer-events-auto" : "pointer-events-none"}`}
+      className={`absolute left-0 ${
+        topBar ? "top-[120px] md:top-[143px]" : "top-[83px] md:top-[103px]"
+      } w-full bg-primary2 py-4 md:py-8 flex justify-center items-center px-4 md:px-10 xl:px-50 z-1`}
     >
-      {/* Example input */}
       <input
         type="text"
         placeholder="What are you looking for..."
-        onChange={(e) => {
-          setSearchText(e.target.value);
-        }}
-        className="w-full pr-6 pl-12 text-lg outline-none border border-slate-100/35 mx-auto placeholder:text-white py-2 rounded-xl text-white placeholder:text-sm"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        className="w-full pr-6 pl-12 text-lg outline-none border border-slate-100/35 mx-auto placeholder:text-white py-2 rounded-xl text-white"
       />
-      <RiSearch2Line className="text-white w-7 absolute left-6 md:left-12 xl:left-52" />
+
+      <RiSearch2Line
+        className="text-white w-7 absolute left-6 md:left-12 xl:left-52 cursor-pointer"
+        onClick={handleSearch}
+      />
     </div>
   );
 };

@@ -25,11 +25,19 @@ import {
 } from "@remixicon/react";
 import { Link } from "react-router-dom";
 import Loader from "../components/Common/Loader";
+import { useSearchParams } from "react-router-dom";
 
 const ShopPage = () => {
   // --- MAIN FILTER STATE (Applied to finalProducts) ---
   const productsGridRef = useRef(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("search") || "";
+    setSearchInput(query);
+    setSearch(query);
+  }, [searchParams]);
+
   const [wishlistProductIds, setWishlistProductIds] = useState([]);
   const [wishlistLoadingId, setWishlistLoadingId] = useState(null);
 

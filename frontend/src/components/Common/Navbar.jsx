@@ -106,10 +106,13 @@ const Navbar = ({ searchModel, setSearchModel }) => {
           <Link to="/shop" className="hover:text-primary1 menu-item">
             Shop
           </Link>
-
+          <Link to="/" className="hover:text-primary1 menu-item">
+            Men
+          </Link>
           <Link to="/" className="hover:text-primary1 menu-item">
             Women
           </Link>
+
           <Link to="/contact-us" className="hover:text-primary1 menu-item">
             Contact Us
           </Link>
