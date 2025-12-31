@@ -68,11 +68,19 @@ const HowItWorks = () => {
 
           {/* Step 3 */}
           <div className="grid md:grid-cols-2 gap-10 md:gap-20 items-center">
-            <img
+            {/* <img
               src="./images/htw2.jpg"
               className="rounded-xl shadow-md"
               alt="step"
-            />
+            /> */}
+            <video
+              src="3rd_step.mp4"
+              className="rounded-xl"
+              alt="step"
+              autoPlay
+              loop
+              muted
+            ></video>
 
             <div>
               <div className="w-15 h-15 flex items-center justify-center bg-linear-to-br from-primary4 to-primary3 text-primary2 text-2xl rounded-full mb-4 font-semibold">

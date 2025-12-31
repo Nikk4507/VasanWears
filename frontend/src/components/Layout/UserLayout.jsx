@@ -12,6 +12,10 @@ const UserLayout = () => {
   const location = useLocation();
   const { showLoader, hideLoader } = useLoaderStore();
 
+  const hideHeaderFooter =
+    typeof location?.pathname === "string" &&
+    location.pathname.startsWith("/design");
+
   // useEffect(() => {
   //   showLoader();
   //   const timer = setTimeout(() => hideLoader(), 900);
@@ -21,12 +25,12 @@ const UserLayout = () => {
   return (
     <>
       {/* <Loader /> */}
-      <Header />
+      {!hideHeaderFooter && <Header />}
       <Outlet />
       {/* <div className='mt-2 h-screen bg-slate-100'></div> */}
-      <Footer />
+      {!hideHeaderFooter && <Footer />}
       <ScrollToTop />
-      <BottomNav />
+      {!hideHeaderFooter && <BottomNav />}
     </>
   );
 };
